@@ -42,23 +42,23 @@ flowchart TD
     Y --> Z[🗑️ Clean up]
     Z --> N
 
-    N --> AA[🔍 Run tests]
-    AA --> AB[🎯 nx run-many]
+    N --> AA[🔍 Run validation]
+    AA --> AB[🎯 nx run-many build]
     AB --> AC{Pass?}
 
-    AC -->|Yes| AD{Strategy?}
-    AD -->|run-and-auto-merge| AE[🚀 Push direct]
-    AD -->|run-and-always-pr| AF[📝 Create PR]
+    AC -->|Yes| AD{merge-strategy?}
+    AD -->|auto-merge| AE[🚀 Push direct]
+    AD -->|always-pr| AF[📝 Create PR]
 
     AC -->|No| AF
 
-    AE --> AI[✅ Auto-merged]
-    AF --> AJ[✅ PR Created]
+    AE --> AG[✅ Auto-merged]
+    AF --> AH[✅ PR Created]
 
     style A fill:#e1f5fe
     style G fill:#c8e6c9
-    style AI fill:#c8e6c9
-    style AJ fill:#c8e6c9
+    style AG fill:#c8e6c9
+    style AH fill:#c8e6c9
     style S fill:#ffcdd2
     style R fill:#ffcdd2
     style X fill:#fff3e0
@@ -94,14 +94,14 @@ flowchart TD
 - **🧹 Remove file / 🗑️ Clean up**: Remove migrations.json locally after successful migration
 
 ### Validation Phase
-- **🔍 Run tests**: Execute configured validation commands
-- **🎯 nx run-many**: Run `nx run-many --target=build,test --affected/all`
+- **🔍 Run validation**: Execute configured validation commands (default: build)
+- **🎯 nx run-many build**: Run `nx run-many --target=build --affected` by default
 - **Pass?**: Verify all validation commands succeeded
 
 ### Strategy Decision (on validation success)
-- **Strategy?**: Check validation-and-merge-strategy setting
-- **run-and-auto-merge**: Auto-merge successful validation
-- **run-and-always-pr**: Create PR even on successful validation
+- **merge-strategy?**: Check merge strategy setting
+- **auto-merge**: Auto-merge when validation passes
+- **always-pr**: Create PR even when validation passes
 
 ### Final Actions
 - **🚀 Push direct**: Push changes directly to target branch (auto-merge)
@@ -132,27 +132,31 @@ flowchart TD
 - **`yes`**: Commits migrations.json to repository for audit trail
 - **`false`** (default): Removes migrations.json locally after success
 
-### 5. **Validation and Merge Strategy**
-- **run-and-auto-merge**: Run validation → auto-merge if pass, create PR if fail
-- **run-and-always-pr**: Run validation → always create PR regardless of result
+### 5. **Merge Strategy**
+- **auto-merge**: Auto-merge if validation passes, create PR if validation fails
+- **always-pr**: Always create PR regardless of validation result
 
 ## 📝 Example Scenarios
 
-### Scenario A: Complete Success with Auto-merge
+### Scenario A: Complete Success with Auto-merge (Default)
 ```
-Start → Setup → Install → Version Check → Migrate → Run Migrations → Validate → Auto-merge ✅
+Start → Setup → Install → Version Check → Migrate → Run Migrations → Build Validation ✅ → Auto-merge ✅
 ```
 
 ### Scenario B: Validation Failure with PR Creation
 ```
-Start → Setup → Install → Version Check → Migrate → Run Migrations → Validate ❌ → Create PR
+Start → Setup → Install → Version Check → Migrate → Run Migrations → Build Validation ❌ → Create PR
 ```
 
-### Scenario C: No Update Needed
+### Scenario C: Always Create PR Strategy
+```
+Start → Setup → Install → Version Check → Migrate → Run Migrations → Build Validation ✅ → Create PR
+```
+
+### Scenario D: No Update Needed
 ```
 Start → Setup → Install → Version Check → Already up-to-date ✅
 ```
-
 
 ### Scenario E: Migration File Audit Trail
 ```
@@ -172,8 +176,8 @@ Start → Setup → Install → Version Check → Migrate → Migration fails �
 | `nx-version-tag: canary/next` | Uses pre-release version |
 | `push-migrations-json: yes` | migrations.json preserved in Git history |
 | `push-migrations-json: false` | migrations.json removed after successful migration |
-| `validation-and-merge-strategy: run-and-auto-merge` | Run validation, auto-merge on success, PR on failure |
-| `validation-and-merge-strategy: run-and-always-pr` | Run validation, always create PR |
+| `merge-strategy: auto-merge` | Auto-merge on validation success, PR on failure |
+| `merge-strategy: always-pr` | Always create PR regardless of validation result |
 | `validation-scope: affected` | Only validate affected projects |
 | `validation-scope: all` | Validate all projects in workspace |
 

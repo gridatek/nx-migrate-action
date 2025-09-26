@@ -30,17 +30,17 @@ inputs:
   validation-commands:
     description: 'Commands to run for validation (comma-separated)'
     required: false
-    default: 'build,test'
+    default: 'build'
 
   validation-scope:
     description: 'Scope for validation commands (all, affected)'
     required: false
     default: 'affected'
 
-  validation-and-merge-strategy:
-    description: 'Validation and merge strategy (run-and-auto-merge, run-and-always-pr)'
+  merge-strategy:
+    description: 'Merge strategy after validation (auto-merge, always-pr)'
     required: false
-    default: 'run-and-auto-merge'
+    default: 'auto-merge'
 
   pr-labels:
     description: 'Labels to add to PRs (comma-separated)'
@@ -317,7 +317,7 @@ runs:
     - name: Push to main branch
       if: |
         steps.check-update.outputs.updated == 'true' &&
-        inputs.validation-and-merge-strategy == 'run-and-auto-merge' &&
+        inputs.merge-strategy == 'auto-merge' &&
         steps.validation.outputs.result == 'success'
       shell: bash
       run: |
@@ -329,8 +329,8 @@ runs:
       if: |
         steps.check-update.outputs.updated == 'true' &&
         (
-          inputs.validation-and-merge-strategy == 'run-and-always-pr' ||
-          (inputs.validation-and-merge-strategy == 'run-and-auto-merge' && steps.validation.outputs.result != 'success')
+          inputs.merge-strategy == 'always-pr' ||
+          (inputs.merge-strategy == 'auto-merge' && steps.validation.outputs.result != 'success')
         )
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -349,7 +349,7 @@ runs:
         echo "Git status: $(git status --short)"
         
         # Determine PR reason
-        if [[ "${{ inputs.validation-and-merge-strategy }}" == "run-and-always-pr" ]]; then
+        if [[ "${{ inputs.merge-strategy }}" == "always-pr" ]]; then
           PR_REASON="Manual review requested (always-pr strategy)"
           STATUS_EMOJI="🔍"
         else

@@ -64,7 +64,7 @@ jobs:
           package-manager: 'pnpm'
           validation-commands: 'build,test,lint,e2e'
           validation-scope: 'all'
-          validation-and-merge-strategy: 'run-and-always-pr'
+          merge-strategy: 'always-pr'
           pr-labels: 'dependencies,nx-migration,high-priority'
           target-branch: 'develop'
 ```
@@ -78,9 +78,9 @@ jobs:
 | `nx-version-tag` | Nx version tag to use (latest, canary, next) | `latest` | No |
 | `node-version` | Node.js version to use                       | `22` | No |
 | `package-manager` | Package manager (npm, yarn, pnpm)            | `npm` | No |
-| `validation-commands` | Validation commands (comma-separated)        | `build,test` | No |
+| `validation-commands` | Validation commands (comma-separated)        | `build` | No |
 | `validation-scope` | Validation scope (all, affected)             | `affected` | No |
-| `validation-and-merge-strategy` | Strategy for validation and merging (run-and-auto-merge, run-and-always-pr) | `run-and-auto-merge` | No |
+| `merge-strategy` | Merge strategy after validation (auto-merge, always-pr) | `auto-merge` | No |
 | `pr-labels` | PR labels (comma-separated)                  | `dependencies,nx-migration,automated` | No |
 | `commit-message-prefix` | Commit message prefix                        | `build` | No |
 | `target-branch` | Target branch for changes                    | `main` | No |
@@ -131,7 +131,7 @@ jobs:
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    validation-and-merge-strategy: 'run-and-always-pr'
+    merge-strategy: 'always-pr'
     validation-commands: 'build,test,lint'
 ```
 
@@ -141,7 +141,8 @@ jobs:
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    # Uses run-and-auto-merge by default
+    # Uses auto-merge by default
+    # Only runs build validation by default
 ```
 
 ### Multiple Nx Packages
