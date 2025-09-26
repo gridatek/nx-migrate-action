@@ -58,11 +58,29 @@ jobs:
           echo ""
           echo "🔗 Direct edit link: https://github.com/${{ github.repository }}/releases/edit/$RELEASE_TAG"
 
+      - name: Create Labels (if needed)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🏷️ Ensuring required labels exist..."
+
+          # Create marketplace label
+          gh label create "marketplace" \
+            --description "Issues related to GitHub Marketplace publication" \
+            --color "7057ff" 2>/dev/null || echo "Label 'marketplace' already exists"
+
+          # Create release label
+          gh label create "release" \
+            --description "Issues related to releases and versioning" \
+            --color "0e8a16" 2>/dev/null || echo "Label 'release' already exists"
+
       - name: Create Marketplace Issue
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Create an issue as a reminder if automation doesn't work
+          echo "📝 Creating marketplace publication issue..."
+
           gh issue create \
             --title "📦 Publish ${{ github.event.inputs.release_tag }} to GitHub Marketplace" \
             --body "## 🏪 Marketplace Publication Required
@@ -82,4 +100,6 @@ jobs:
 
           ---
           *This issue was created automatically by the marketplace publication workflow.*" \
-            --label "marketplace,release" || echo "Issue might already exist"
+            --label "marketplace,release" \
+          && echo "✅ Issue created successfully" \
+          || echo "⚠️ Issue creation failed (might already exist)"
