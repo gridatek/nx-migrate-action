@@ -33,18 +33,18 @@ jobs:
 
           # Create package.json first
           cat > package.json << 'PACKAGE_EOF'
-{
-  "name": "test-workspace",
-  "version": "1.0.0",
-  "scripts": {
-    "build": "echo 'Build complete'",
-    "test": "echo 'Tests complete'"
-  },
-  "dependencies": {
-    "@nx/workspace": "16.0.0"
-  }
-}
-PACKAGE_EOF
+          {
+            "name": "test-workspace",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "echo 'Build complete'",
+              "test": "echo 'Tests complete'"
+            },
+            "dependencies": {
+              "@nx/workspace": "16.0.0"
+            }
+          }
+          PACKAGE_EOF
 
           # Create nx.json
           cat > nx.json << EOF
