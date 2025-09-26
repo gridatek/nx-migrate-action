@@ -80,7 +80,7 @@ jobs:
 | `package-manager` | Package manager (npm, yarn, pnpm)            | `npm` | No |
 | `validation-commands` | Validation commands (comma-separated)        | `build,test` | No |
 | `validation-scope` | Validation scope (all, affected)             | `affected` | No |
-| `validation-and-merge-strategy` | Strategy for validation and merging (run-and-auto-merge, run-and-always-pr, skip-and-always-pr) | `run-and-auto-merge` | No |
+| `validation-and-merge-strategy` | Strategy for validation and merging (run-and-auto-merge, run-and-always-pr) | `run-and-auto-merge` | No |
 | `pr-labels` | PR labels (comma-separated)                  | `dependencies,nx-migration,automated` | No |
 | `commit-message-prefix` | Commit message prefix                        | `build` | No |
 | `target-branch` | Target branch for changes                    | `main` | No |
@@ -135,13 +135,13 @@ jobs:
     validation-commands: 'build,test,lint'
 ```
 
-### Skip Validation (Fast Updates)
+### Fast Auto-merge (Default Strategy)
 
 ```yaml
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    validation-and-merge-strategy: 'skip-and-always-pr'
+    # Uses run-and-auto-merge by default
 ```
 
 ### Multiple Nx Packages
