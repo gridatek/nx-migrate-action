@@ -203,12 +203,21 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         if [[ -f migrations.json ]]; then
-          echo "Found migrations.json"
+          echo "✅ Found migrations.json"
           echo "has-migrations=true" >> $GITHUB_OUTPUT
-          echo "Migrations to run:"
-          cat migrations.json | jq '.migrations // empty' || echo "Could not parse migrations.json"
+
+          # Check if migrations.json has actual migrations
+          MIGRATION_COUNT=$(cat migrations.json | jq '.migrations | length // 0' 2>/dev/null || echo "0")
+          echo "📋 Number of migrations found: $MIGRATION_COUNT"
+
+          if [[ "$MIGRATION_COUNT" -gt 0 ]]; then
+            echo "📝 Migrations to run:"
+            cat migrations.json | jq '.migrations // {}' 2>/dev/null || echo "Could not parse migration details"
+          else
+            echo "ℹ️ migrations.json exists but contains no migrations"
+          fi
         else
-          echo "No migrations.json found"
+          echo "ℹ️ No migrations.json found - no migrations needed"
           echo "has-migrations=false" >> $GITHUB_OUTPUT
         fi
 
@@ -217,8 +226,17 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        echo "Running Nx migrations..."
-        npx nx migrate --run-migrations
+        echo "🚀 Running Nx migrations..."
+
+        # Run migrations with error handling
+        if npx nx migrate --run-migrations; then
+          echo "✅ Migrations completed successfully"
+        else
+          echo "❌ Migration failed"
+          echo "📋 migrations.json content:"
+          cat migrations.json || echo "Could not read migrations.json"
+          exit 1
+        fi
 
     - name: Setup Git
       if: steps.check-update.outputs.updated == 'true'
@@ -249,9 +267,12 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         if [[ -f migrations.json ]]; then
+          echo "🧹 Cleaning up migrations.json after successful migration"
           git rm -f migrations.json
-          git commit -m "${{ inputs.commit-message-prefix }}: remove migrations.json after running migrations"
-          echo "migrations.json removed and committed"
+          git commit -m "${{ inputs.commit-message-prefix }}: clean up migrations.json after running migrations"
+          echo "✅ migrations.json removed and committed"
+        else
+          echo "ℹ️ No migrations.json to clean up"
         fi
 
     - name: Run validation
