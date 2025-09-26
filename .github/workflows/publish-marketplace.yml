@@ -52,7 +52,7 @@ jobs:
           echo "1. Go to: https://github.com/${{ github.repository }}/releases"
           echo "2. Click 'Edit' on release $RELEASE_TAG"
           echo "3. Check ☑️ 'Publish this Action to the GitHub Marketplace'"
-          echo "4. Select category: 'Continuous Integration'"
+          echo "4. Select category: 'Dependency management'"
           echo "5. Add description: 'Automatically migrate Nx workspaces with validation and smart PR creation'"
           echo "6. Click 'Update release'"
           echo ""
@@ -91,7 +91,7 @@ jobs:
           1. Go to [Releases](https://github.com/${{ github.repository }}/releases)
           2. Click 'Edit' on release ${{ github.event.inputs.release_tag }}
           3. Check ☑️ 'Publish this Action to the GitHub Marketplace'
-          4. Select category: **Continuous Integration**
+          4. Select category: **Dependency management**
           5. Add description: \`Automatically migrate Nx workspaces with validation and smart PR creation\`
           6. Click 'Update release'
 
