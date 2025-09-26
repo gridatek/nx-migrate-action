@@ -233,7 +233,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
-        git add . || git add -A
+        git add .
         if [[ $(git status --porcelain) ]]; then
           git commit -m "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
                      -m "Automated update by nx-migrate action" \
@@ -329,7 +329,14 @@ runs:
         
         echo "Creating PR with branch: ${BRANCH}"
         git checkout -b ${BRANCH}
-        git push --set-upstream origin ${BRANCH}
+
+        # Try to push branch, handle conflicts gracefully
+        if ! git push --set-upstream origin ${BRANCH}; then
+          echo "Failed to push branch ${BRANCH}, trying with force..."
+          # Try to delete and recreate if branch exists
+          git push origin --delete ${BRANCH} 2>/dev/null || true
+          git push --set-upstream origin ${BRANCH}
+        fi
         
         # Convert labels to space-separated format for gh cli
         LABELS=$(echo "${{ inputs.pr-labels }}" | tr ',' ' ')
