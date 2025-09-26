@@ -1,0 +1,31 @@
+{
+  "name": "nx-migrate-action",
+  "version": "1.0.0",
+  "description": "Automatically migrate Nx workspace to the latest version with validation and smart PR creation",
+  "main": "action.yml",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gridatek/nx-migrate-action.git"
+  },
+  "keywords": [
+    "nx",
+    "migration",
+    "github-action",
+    "automation",
+    "monorepo",
+    "ci-cd",
+    "dependency-update"
+  ],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gridatek/nx-migrate-action/issues"
+  },
+  "homepage": "https://github.com/gridatek/nx-migrate-action#readme",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "echo \"No linting specified\" && exit 0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

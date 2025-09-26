@@ -1,0 +1,82 @@
+name: Nx Migration
+
+on:
+  # Run daily at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      skip-validation:
+        description: 'Skip validation tests'
+        type: boolean
+        default: false
+      force-pr:
+        description: 'Always create PR (never auto-merge)'
+        type: boolean
+        default: false
+
+jobs:
+  nx-migrate:
+    name: Update Nx Workspace
+    runs-on: ubuntu-latest
+
+    # Required permissions
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Nx Migration
+        uses: gridatek/nx-migrate-action@v1
+        with:
+          # Required
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # Optional: Customize based on your project
+          node-version: '20'
+          package-manager: 'npm'  # or 'yarn', 'pnpm'
+
+          # Validation settings
+          validation-commands: 'build,test,lint'
+          validation-scope: 'affected'  # or 'all'
+          skip-validation: ${{ github.event.inputs.skip-validation || 'false' }}
+
+          # Branching strategy
+          auto-merge-on-success: ${{ !github.event.inputs.force-pr && 'true' || 'false' }}
+          create-pr-on-failure: 'true'
+          target-branch: 'main'
+
+          # Java setup (uncomment if needed)
+          # setup-java: 'true'
+          # java-version: '17'
+          # java-distribution: 'temurin'
+
+          # Customization
+          pr-labels: 'dependencies,nx-migration,automated'
+          commit-message-prefix: 'build'
+
+      - name: Report Results
+        if: always()
+        run: |
+          echo "## 📊 Migration Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Nx Updated**: ${{ steps.nx-migrate.outputs.updated }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ steps.nx-migrate.outputs.updated }}" == "true" ]]; then
+            echo "- **Version**: ${{ steps.nx-migrate.outputs.current-version }} → ${{ steps.nx-migrate.outputs.latest-version }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Migrations**: ${{ steps.nx-migrate.outputs.has-migrations }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Validation**: ${{ steps.nx-migrate.outputs.validation-result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+          
+            if [[ -n "${{ steps.nx-migrate.outputs.pr-url }}" ]]; then
+              echo "- **PR Created**: [${{ steps.nx-migrate.outputs.pr-url }}](${{ steps.nx-migrate.outputs.pr-url }})" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- **Status**: ✅ Already up to date" >> $GITHUB_STEP_SUMMARY
+          fi

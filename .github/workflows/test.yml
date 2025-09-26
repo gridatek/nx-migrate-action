@@ -1,0 +1,112 @@
+name: Test Action
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-action:
+    name: Test Action
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        package-manager: [npm, yarn, pnpm]
+        node-version: ['18', '20', '22']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Create test Nx workspace
+        run: |
+          # Create a minimal test workspace
+          mkdir test-workspace
+          cd test-workspace
+          
+          case "${{ matrix.package-manager }}" in
+            npm)
+              npm init -y
+              npm install @nx/workspace@16.0.0  # Use older version for testing
+              ;;
+            yarn)
+              yarn init -y
+              yarn add @nx/workspace@16.0.0
+              ;;
+            pnpm)
+              pnpm init
+              pnpm add @nx/workspace@16.0.0
+              ;;
+          esac
+          
+          # Create nx.json
+          cat > nx.json << EOF
+          {
+            "version": 3,
+            "projects": {},
+            "targetDefaults": {
+              "build": {
+                "cache": true
+              }
+            }
+          }
+          EOF
+          
+          # Add build script
+          case "${{ matrix.package-manager }}" in
+            npm)
+              npm pkg set scripts.build="echo 'Build complete'"
+              npm pkg set scripts.test="echo 'Tests complete'"
+              ;;
+            yarn)
+              yarn pkg set scripts.build="echo 'Build complete'"
+              yarn pkg set scripts.test="echo 'Tests complete'"
+              ;;
+            pnpm)
+              pnpm pkg set scripts.build="echo 'Build complete'"
+              pnpm pkg set scripts.test="echo 'Tests complete'"
+              ;;
+          esac
+
+      - name: Test Action
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          package-manager: ${{ matrix.package-manager }}
+          node-version: ${{ matrix.node-version }}
+          working-directory: './test-workspace'
+          validation-commands: 'build,test'
+          auto-merge-on-success: 'false'
+          skip-validation: 'false'
+
+      - name: Verify outputs
+        run: |
+          echo "Action completed successfully"
+          echo "Package manager: ${{ matrix.package-manager }}"
+          echo "Node version: ${{ matrix.node-version }}"
+
+  lint:
+    name: Lint Action
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: action.yml
+          config_file: .yamllint.yml
+
+      - name: Validate action.yml
+        uses: docker://rhymond/github-action-validator:latest
+        with:
+          file: action.yml

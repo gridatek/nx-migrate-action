@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: v${{ steps.version.outputs.version }}
+          body: |
+            ## 🚀 Changes in v${{ steps.version.outputs.version }}
+            
+            See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+            
+            ## 📦 Usage
+            
+            ```yaml
+            - uses: gridatek/nx-migrate-action@v${{ steps.version.outputs.version }}
+              with:
+                github-token: ${{ secrets.GITHUB_TOKEN }}
+            ```
+            
+            ## 🔗 Documentation
+            
+            - [README.md](README.md) - Full documentation
+            - [Examples](examples/) - Usage examples
+
+          draft: false
+          prerelease: false
+
+  update-major-tag:
+    name: Update Major Version Tag
+    runs-on: ubuntu-latest
+    needs: release
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update major version tag
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
+          
+          git config user.name "Release Bot"
+          git config user.email "release-bot@users.noreply.github.com"
+          
+          # Delete existing major tag if it exists
+          git tag -d v$MAJOR_VERSION || true
+          git push origin :refs/tags/v$MAJOR_VERSION || true
+          
+          # Create new major tag
+          git tag v$MAJOR_VERSION
+          git push origin v$MAJOR_VERSION
+          
+          echo "Updated major version tag: v$MAJOR_VERSION"

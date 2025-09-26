@@ -1,0 +1,279 @@
+# Nx Migration Action
+
+Automatically migrate your Nx workspace to the latest version with smart validation and PR creation.
+
+## Features
+
+- 🔄 **Automatic Updates**: Checks for and applies Nx updates automatically
+- 🛠️ **Migration Handling**: Runs Nx migrations when available
+- ✅ **Validation**: Runs configurable validation commands (build, test, etc.)
+- 🤖 **Smart Branching**: Auto-merge on success, create PR on failure
+- 📦 **Multi Package Manager**: Supports npm, yarn, and pnpm
+- ⚙️ **Highly Configurable**: Customize every aspect of the migration process
+- 🏷️ **Auto Labeling**: Automatically labels PRs for easy organization
+
+## Quick Start
+
+### Basic Usage
+
+```yaml
+name: Nx Migration
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * *'  # Daily at 1 AM
+
+jobs:
+  nx-migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - uses: gridatek/nx-migrate-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Advanced Configuration
+
+```yaml
+name: Nx Migration
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * 1'  # Weekly on Mondays
+
+jobs:
+  nx-migrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - uses: gridatek/nx-migrate-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          node-version: '18'
+          package-manager: 'pnpm'
+          validation-commands: 'build,test,lint,e2e'
+          validation-scope: 'all'
+          setup-java: 'true'
+          java-version: '21'
+          auto-merge-on-success: 'false'
+          pr-labels: 'dependencies,nx-migration,high-priority'
+          target-branch: 'develop'
+```
+
+## Configuration Options
+
+| Input | Description | Default | Required |
+|-------|-------------|---------|----------|
+| `github-token` | GitHub token for creating PRs and pushing | `${{ github.token }}` | ✅ |
+| `nx-package` | The Nx package to check for updates | `@nx/workspace` | ❌ |
+| `node-version` | Node.js version to use | `20` | ❌ |
+| `java-version` | Java version (if needed) | `17` | ❌ |
+| `java-distribution` | Java distribution | `temurin` | ❌ |
+| `package-manager` | Package manager (npm, yarn, pnpm) | `npm` | ❌ |
+| `validation-commands` | Validation commands (comma-separated) | `build,test` | ❌ |
+| `validation-scope` | Validation scope (all, affected) | `affected` | ❌ |
+| `auto-merge-on-success` | Auto-push to main if validation passes | `true` | ❌ |
+| `create-pr-on-failure` | Create PR if validation fails | `true` | ❌ |
+| `pr-labels` | PR labels (comma-separated) | `dependencies,nx-migration,automated` | ❌ |
+| `commit-message-prefix` | Commit message prefix | `build` | ❌ |
+| `skip-validation` | Skip validation and always create PR | `false` | ❌ |
+| `target-branch` | Target branch for changes | `main` | ❌ |
+| `working-directory` | Working directory | `.` | ❌ |
+| `setup-java` | Whether to setup Java | `false` | ❌ |
+
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| `updated` | Whether Nx was updated |
+| `current-version` | Current Nx version before update |
+| `latest-version` | Latest Nx version |
+| `has-migrations` | Whether migrations were found |
+| `validation-result` | Result of validation tests |
+| `pr-url` | URL of created PR (if any) |
+
+## Usage Examples
+
+### With Different Package Managers
+
+#### npm (default)
+```yaml
+- uses: gridatek/nx-migrate-action@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+#### Yarn
+```yaml
+- uses: gridatek/nx-migrate-action@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    package-manager: 'yarn'
+```
+
+#### pnpm
+```yaml
+- uses: gridatek/nx-migrate-action@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    package-manager: 'pnpm'
+```
+
+### Monorepo with Java Projects
+
+```yaml
+- uses: gridatek/nx-migrate-action@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    setup-java: 'true'
+    java-version: '21'
+    validation-commands: 'build,test,e2e'
+    validation-scope: 'all'
+```
+
+### Conservative Approach (Always Create PRs)
+
+```yaml
+- uses: gridatek/nx-migrate-action@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    auto-merge-on-success: 'false'
+    validation-commands: 'build,test,lint'
+```
+
+### Skip Validation (Fast Updates)
+
+```yaml
+- uses: gridatek/nx-migrate-action@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    skip-validation: 'true'
+    auto-merge-on-success: 'false'
+```
+
+### Multiple Nx Packages
+
+You can run the action multiple times for different Nx packages:
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+    with:
+      fetch-depth: 0
+      
+  - uses: gridatek/nx-migrate-action@v1
+    with:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+      nx-package: '@nx/workspace'
+      
+  - uses: gridatek/nx-migrate-action@v1
+    with:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+      nx-package: '@nx/angular'
+```
+
+## How It Works
+
+1. **Check for Updates**: Compares current Nx version with latest available
+2. **Apply Updates**: Runs `nx migrate latest` if update is available
+3. **Run Migrations**: Executes any migrations found in `migrations.json`
+4. **Validate Changes**: Runs specified validation commands
+5. **Smart Branching**:
+    - ✅ **Success**: Push directly to target branch (if enabled)
+    - ❌ **Failure**: Create PR for manual review
+
+## Workflow Strategies
+
+### Daily Updates (Aggressive)
+```yaml
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+```
+
+### Weekly Updates (Balanced)
+```yaml
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Monday at 2 AM
+```
+
+### Monthly Updates (Conservative)
+```yaml
+on:
+  schedule:
+    - cron: '0 2 1 * *'  # First day of month at 2 AM
+```
+
+## Permissions
+
+Your workflow needs these permissions:
+
+```yaml
+permissions:
+  contents: write      # To push commits
+  pull-requests: write # To create PRs
+```
+
+## Security Considerations
+
+- The action uses the provided GitHub token for authentication
+- All operations respect your repository's branch protection rules
+- No sensitive data is logged or exposed
+- Commits are signed with a dedicated bot account
+
+## Troubleshooting
+
+### Common Issues
+
+**"No changes to commit"**
+- This is normal when Nx is already up to date
+
+**"Validation failed"**
+- Check the workflow logs for specific test failures
+- The action will create a PR for manual review
+
+**"Permission denied"**
+- Ensure your workflow has `contents: write` and `pull-requests: write` permissions
+
+**"Package manager not found"**
+- Verify your package manager is correctly specified and available
+
+### Debug Mode
+
+Enable verbose logging:
+
+```yaml
+- uses: gridatek/nx-migrate-action@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+  env:
+    ACTIONS_STEP_DEBUG: true
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and updates.

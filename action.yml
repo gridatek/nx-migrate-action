@@ -1,0 +1,385 @@
+name: 'Nx Migration'
+description: 'Automatically migrate Nx workspace to the latest version with validation and smart PR creation'
+author: 'Khalil LAGRIDA'
+
+branding:
+  icon: 'arrow-up'
+  color: 'blue'
+
+inputs:
+  github-token:
+    description: 'GitHub token for creating PRs and pushing changes'
+    required: true
+    default: ${{ github.token }}
+
+  nx-package:
+    description: 'The Nx package to check for updates'
+    required: false
+    default: '@nx/workspace'
+
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+
+  java-version:
+    description: 'Java version to use (if needed for your project)'
+    required: false
+    default: '17'
+
+  java-distribution:
+    description: 'Java distribution to use'
+    required: false
+    default: 'temurin'
+
+  package-manager:
+    description: 'Package manager to use (npm, yarn, pnpm)'
+    required: false
+    default: 'npm'
+
+  validation-commands:
+    description: 'Commands to run for validation (comma-separated)'
+    required: false
+    default: 'build,test'
+
+  validation-scope:
+    description: 'Scope for validation commands (all, affected)'
+    required: false
+    default: 'affected'
+
+  auto-merge-on-success:
+    description: 'Automatically push to main branch if validation passes'
+    required: false
+    default: 'true'
+
+  create-pr-on-failure:
+    description: 'Create PR if validation fails'
+    required: false
+    default: 'true'
+
+  pr-labels:
+    description: 'Labels to add to PRs (comma-separated)'
+    required: false
+    default: 'dependencies,nx-migration,automated'
+
+  commit-message-prefix:
+    description: 'Prefix for commit messages'
+    required: false
+    default: 'build'
+
+  skip-validation:
+    description: 'Skip validation steps and always create PR'
+    required: false
+    default: 'false'
+
+  target-branch:
+    description: 'Target branch for merging changes'
+    required: false
+    default: 'main'
+
+  working-directory:
+    description: 'Working directory for the action'
+    required: false
+    default: '.'
+
+  setup-java:
+    description: 'Whether to setup Java (needed for some Nx projects)'
+    required: false
+    default: 'false'
+
+outputs:
+  updated:
+    description: 'Whether Nx was updated'
+    value: ${{ steps.check-update.outputs.updated }}
+
+  current-version:
+    description: 'Current Nx version before update'
+    value: ${{ steps.check-update.outputs.current-version }}
+
+  latest-version:
+    description: 'Latest Nx version'
+    value: ${{ steps.check-update.outputs.latest-version }}
+
+  has-migrations:
+    description: 'Whether migrations were found'
+    value: ${{ steps.check-migrations.outputs.has-migrations }}
+
+  validation-result:
+    description: 'Result of validation tests'
+    value: ${{ steps.validation.outputs.result }}
+
+  pr-url:
+    description: 'URL of created PR (if any)'
+    value: ${{ steps.create-pr.outputs.pr-url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: ${{ inputs.package-manager }}
+
+    - name: Setup Java
+      if: inputs.setup-java == 'true'
+      uses: actions/setup-java@v4
+      with:
+        distribution: ${{ inputs.java-distribution }}
+        java-version: ${{ inputs.java-version }}
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        case "${{ inputs.package-manager }}" in
+          npm)
+            npm ci
+            ;;
+          yarn)
+            yarn install --frozen-lockfile
+            ;;
+          pnpm)
+            pnpm install --frozen-lockfile
+            ;;
+          *)
+            echo "Unsupported package manager: ${{ inputs.package-manager }}"
+            exit 1
+            ;;
+        esac
+
+    - name: Check for Nx updates
+      id: check-update
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        case "${{ inputs.package-manager }}" in
+          npm)
+            CURRENT_VERSION=$(npm list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.dependencies["${{ inputs.nx-package }}"].version // empty')
+            LATEST_VERSION=$(npm view ${{ inputs.nx-package }} version)
+            ;;
+          yarn)
+            CURRENT_VERSION=$(yarn list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.data.trees[0].name // empty' | sed 's/.*@//')
+            LATEST_VERSION=$(yarn info ${{ inputs.nx-package }} version --json | jq -r '.data')
+            ;;
+          pnpm)
+            CURRENT_VERSION=$(pnpm list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.[0].dependencies["${{ inputs.nx-package }}"].version // empty')
+            LATEST_VERSION=$(pnpm view ${{ inputs.nx-package }} version)
+            ;;
+        esac
+        
+        if [[ "$CURRENT_VERSION" != "$LATEST_VERSION" && -n "$LATEST_VERSION" && -n "$CURRENT_VERSION" ]]; then
+          echo "Current version: $CURRENT_VERSION"
+          echo "Latest version: $LATEST_VERSION"
+          echo "updated=true" >> $GITHUB_OUTPUT
+          echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "latest-version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+        else
+          echo "Already up to date: $CURRENT_VERSION"
+          echo "updated=false" >> $GITHUB_OUTPUT
+          echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "latest-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Update Nx
+      if: steps.check-update.outputs.updated == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "Updating Nx from ${{ steps.check-update.outputs.current-version }} to ${{ steps.check-update.outputs.latest-version }}"
+        npx nx migrate latest
+
+    - name: Install dependencies after migration
+      if: steps.check-update.outputs.updated == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        case "${{ inputs.package-manager }}" in
+          npm)
+            npm install
+            ;;
+          yarn)
+            yarn install
+            ;;
+          pnpm)
+            pnpm install
+            ;;
+        esac
+
+    - name: Check for migrations
+      if: steps.check-update.outputs.updated == 'true'
+      id: check-migrations
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [[ -f migrations.json ]]; then
+          echo "Found migrations.json"
+          echo "has-migrations=true" >> $GITHUB_OUTPUT
+          echo "Migrations to run:"
+          cat migrations.json | jq '.migrations // empty' || echo "Could not parse migrations.json"
+        else
+          echo "No migrations.json found"
+          echo "has-migrations=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Run migrations
+      if: steps.check-migrations.outputs.has-migrations == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "Running Nx migrations..."
+        npx nx migrate --run-migrations
+
+    - name: Setup Git
+      if: steps.check-update.outputs.updated == 'true'
+      shell: bash
+      run: |
+        git config user.name "nx-migrate-bot"
+        git config user.email "nx-migrate-bot@users.noreply.github.com"
+
+    - name: Commit changes
+      if: steps.check-update.outputs.updated == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
+        git add .
+        if [[ $(git status --porcelain) ]]; then
+          git commit -m "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
+                     -m "Automated update by nx-migrate action" \
+                     -m "Updated from ${{ steps.check-update.outputs.current-version }} to ${LATEST_VERSION}"
+          echo "Changes committed"
+        else
+          echo "No changes to commit"
+        fi
+
+    - name: Remove migrations.json
+      if: steps.check-migrations.outputs.has-migrations == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [[ -f migrations.json ]]; then
+          git rm -f migrations.json
+          git commit -m "${{ inputs.commit-message-prefix }}: remove migrations.json after running migrations"
+          echo "migrations.json removed and committed"
+        fi
+
+    - name: Run validation
+      id: validation
+      if: steps.check-update.outputs.updated == 'true' && inputs.skip-validation == 'false'
+      continue-on-error: true
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "Running validation commands..."
+        
+        # Convert comma-separated commands to array
+        IFS=',' read -ra COMMANDS <<< "${{ inputs.validation-commands }}"
+        
+        VALIDATION_SUCCESS=true
+        
+        for cmd in "${COMMANDS[@]}"; do
+          cmd=$(echo "$cmd" | xargs)  # trim whitespace
+          echo "Running: nx run-many --target=$cmd --${{ inputs.validation-scope }}"
+        
+          if ! npx nx run-many --target="$cmd" --${{ inputs.validation-scope }} --skip-nx-cache; then
+            echo "❌ Command failed: $cmd"
+            VALIDATION_SUCCESS=false
+          else
+            echo "✅ Command succeeded: $cmd"
+          fi
+        done
+        
+        if [[ "$VALIDATION_SUCCESS" == "true" ]]; then
+          echo "result=success" >> $GITHUB_OUTPUT
+          echo "✅ All validation commands passed"
+        else
+          echo "result=failure" >> $GITHUB_OUTPUT
+          echo "❌ Some validation commands failed"
+          exit 1
+        fi
+      env:
+        NX_VERBOSE_LOGGING: 'true'
+        GITHUB_ACTIONS: 'true'
+
+    - name: Push to main branch
+      if: |
+        steps.check-update.outputs.updated == 'true' && 
+        (inputs.skip-validation == 'true' || steps.validation.outputs.result == 'success') &&
+        inputs.auto-merge-on-success == 'true'
+      shell: bash
+      run: |
+        echo "Validation passed, pushing directly to ${{ inputs.target-branch }}"
+        git push origin HEAD:${{ inputs.target-branch }}
+
+    - name: Create PR
+      id: create-pr
+      if: |
+        steps.check-update.outputs.updated == 'true' && 
+        (
+          (inputs.skip-validation == 'false' && steps.validation.outputs.result != 'success' && inputs.create-pr-on-failure == 'true') ||
+          (inputs.auto-merge-on-success == 'false')
+        )
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
+        BRANCH="nx-migrate-${LATEST_VERSION}-${{ github.run_id }}-${{ github.run_attempt }}"
+        
+        # Determine PR reason
+        if [[ "${{ inputs.auto-merge-on-success }}" == "false" ]]; then
+          PR_REASON="Manual review requested"
+          STATUS_EMOJI="🔍"
+        else
+          PR_REASON="Validation tests failed"
+          STATUS_EMOJI="⚠️"
+        fi
+        
+        echo "Creating PR with branch: ${BRANCH}"
+        git checkout -b ${BRANCH}
+        git push --set-upstream origin ${BRANCH}
+        
+        # Convert labels to space-separated format for gh cli
+        LABELS=$(echo "${{ inputs.pr-labels }}" | tr ',' ' ')
+        
+        # Create PR body
+        PR_BODY="## 🚀 Nx Migration Update
+
+  **Version Update:** \`${{ steps.check-update.outputs.current-version }}\` → \`${LATEST_VERSION}\`
+
+  **Status:** ${STATUS_EMOJI} ${PR_REASON}
+
+### Changes Made:
+- Updated Nx workspace to version ${LATEST_VERSION}
+- Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '❌ No' }}
+- Validation result: ${{ steps.validation.outputs.result || 'skipped' }}
+
+### Package Manager: ${{ inputs.package-manager }}
+### Node Version: ${{ inputs.node-version }}
+
+---
+*This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
+  
+  # Create PR
+  PR_URL=$(gh pr create \
+--title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
+  --body "${PR_BODY}" \
+  --label "${LABELS}" \
+  --base ${{ inputs.target-branch }} \
+  --head ${BRANCH} 2>/dev/null || echo "")
+  
+  if [[ -n "$PR_URL" ]]; then
+  echo "pr-url=$PR_URL" >> $GITHUB_OUTPUT
+echo "✅ PR created: $PR_URL"
+  else
+  # Try to get existing PR URL
+  EXISTING_PR=$(gh pr view ${BRANCH} --json url --jq '.url' 2>/dev/null || echo "")
+  if [[ -n "$EXISTING_PR" ]]; then
+  echo "pr-url=$EXISTING_PR" >> $GITHUB_OUTPUT
+echo "ℹ️ PR already exists: $EXISTING_PR"
+  else
+  echo "❌ Failed to create or find PR"
+  fi
+  fi
