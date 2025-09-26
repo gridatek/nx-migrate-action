@@ -49,7 +49,8 @@ The action follows this sequence:
 
 The action includes comprehensive testing via `.github/workflows/test.yml`:
 - Matrix testing across package managers (npm, yarn, pnpm)
-- Matrix testing across Node.js versions (18, 20, 22)
+- Matrix testing across Node.js versions (22, 24)
+- Default Node.js version is set to LTS (v22) for stability
 - Creates temporary Nx workspace with older version for testing upgrades
 - YAML linting via yamllint with custom configuration (.yamllint.yml)
 

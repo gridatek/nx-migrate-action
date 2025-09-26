@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         package-manager: [npm, yarn, pnpm]
-        node-version: ['18', '20', '22']
+        node-version: ['22', '24']
 
     steps:
       - name: Checkout

@@ -75,7 +75,7 @@ jobs:
 |-------|-------------|---------|----------|
 | `github-token` | GitHub token for creating PRs and pushing | `${{ github.token }}` | ✅ |
 | `nx-package` | The Nx package to check for updates | `@nx/workspace` | ❌ |
-| `node-version` | Node.js version to use | `20` | ❌ |
+| `node-version` | Node.js version to use | `22` | ❌ |
 | `package-manager` | Package manager (npm, yarn, pnpm) | `npm` | ❌ |
 | `validation-commands` | Validation commands (comma-separated) | `build,test` | ❌ |
 | `validation-scope` | Validation scope (all, affected) | `affected` | ❌ |

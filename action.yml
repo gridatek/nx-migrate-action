@@ -20,7 +20,7 @@ inputs:
   node-version:
     description: 'Node.js version to use'
     required: false
-    default: '20'
+    default: '22'
 
   package-manager:
     description: 'Package manager to use (npm, yarn, pnpm)'
