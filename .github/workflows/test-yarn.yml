@@ -56,7 +56,8 @@ jobs:
               "test": "echo 'Tests complete'"
             },
             "dependencies": {
-              "@nx/workspace": "${{ steps.nx-version.outputs.old-version }}"
+              "@nx/workspace": "${{ steps.nx-version.outputs.old-version }}",
+              "nx": "${{ steps.nx-version.outputs.old-version }}"
             }
           }
           EOF
