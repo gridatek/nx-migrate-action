@@ -11,6 +11,10 @@ jobs:
     name: Test with Yarn
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+      pull-requests: write
+
     strategy:
       fail-fast: false
       matrix:
@@ -84,6 +88,11 @@ jobs:
           ls -la
           cat package.json
           echo "=== End workspace info ==="
+
+      - name: Configure Git for testing
+        run: |
+          git config --global user.name "nx-migrate-test-bot"
+          git config --global user.email "nx-migrate-test-bot@users.noreply.github.com"
 
       - name: Test Action
         uses: ./

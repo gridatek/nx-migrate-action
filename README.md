@@ -205,9 +205,14 @@ Your workflow needs these permissions:
 
 ```yaml
 permissions:
-  contents: write      # To push commits
-  pull-requests: write # To create PRs
+  contents: write      # To push commits and create branches
+  pull-requests: write # To create and manage PRs
 ```
+
+### Important Notes:
+- **Organization repositories**: May need additional setup for GitHub CLI authentication
+- **Branch protection**: The action respects branch protection rules - PRs will be created if direct push is blocked
+- **Token permissions**: Use `${{ secrets.GITHUB_TOKEN }}` which has appropriate permissions for most repositories
 
 ## Security Considerations
 
