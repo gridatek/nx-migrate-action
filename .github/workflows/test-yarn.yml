@@ -1,4 +1,4 @@
-name: Test Action - NPM
+name: Test Action - Yarn
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test-npm:
-    name: Test with NPM
+  test-yarn:
+    name: Test with Yarn
     runs-on: ubuntu-latest
 
     strategy:
@@ -24,13 +24,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
 
       - name: Get old Nx version
         id: nx-version
         run: |
-          # Get an older stable version of Nx for testing migration
-          OLD_VERSION=$(npm view @nx/workspace versions --json | jq -r '.[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -20 | head -1 || echo "19.0.0")
+          # Get an older stable version of Nx for testing migration using yarn
+          OLD_VERSION=$(yarn info @nx/workspace versions --json | jq -r '.data[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -20 | head -1 || echo "19.0.0")
           echo "old-version=$OLD_VERSION" >> $GITHUB_OUTPUT
           echo "Using Nx version $OLD_VERSION for testing"
 
@@ -69,8 +68,8 @@ jobs:
           }
           EOF
 
-          # Install dependencies with npm
-          npm install
+          # Install dependencies with yarn
+          yarn install
 
           # Verify workspace setup
           echo "=== Workspace created successfully ==="
@@ -82,7 +81,7 @@ jobs:
         uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          package-manager: npm
+          package-manager: yarn
           node-version: ${{ matrix.node-version }}
           working-directory: './test-workspace'
           validation-commands: 'build,test'
@@ -92,44 +91,5 @@ jobs:
       - name: Verify outputs
         run: |
           echo "Action completed successfully"
-          echo "Package manager: npm"
+          echo "Package manager: yarn"
           echo "Node version: ${{ matrix.node-version }}"
-
-  lint:
-    name: Lint Action
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Lint YAML files
-        uses: ibiqlik/action-yamllint@v3
-        with:
-          file_or_dir: action.yml
-          config_file: .yamllint.yml
-
-      - name: Validate action.yml
-        run: |
-          # Basic validation - check if action.yml is valid YAML and has required fields
-          echo "Validating action.yml structure..."
-
-          # Check if file exists
-          if [[ ! -f "action.yml" ]]; then
-            echo "❌ action.yml not found"
-            exit 1
-          fi
-
-          # Check if it's valid YAML (already done by yamllint above)
-          # Check for required fields
-          if ! grep -q "^name:" action.yml; then
-            echo "❌ Missing 'name' field in action.yml"
-            exit 1
-          fi
-
-          if ! grep -q "^runs:" action.yml; then
-            echo "❌ Missing 'runs' field in action.yml"
-            exit 1
-          fi
-
-          echo "✅ action.yml validation passed"
