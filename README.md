@@ -64,7 +64,7 @@ jobs:
           package-manager: 'pnpm'
           validation-commands: 'build,test,lint,e2e'
           validation-scope: 'all'
-          auto-merge-on-success: 'false'
+          validation-and-merge-strategy: 'run-and-always-pr'
           pr-labels: 'dependencies,nx-migration,high-priority'
           target-branch: 'develop'
 ```
@@ -80,11 +80,9 @@ jobs:
 | `package-manager` | Package manager (npm, yarn, pnpm)            | `npm` | No |
 | `validation-commands` | Validation commands (comma-separated)        | `build,test` | No |
 | `validation-scope` | Validation scope (all, affected)             | `affected` | No |
-| `auto-merge-on-success` | Auto-push to main if validation passes       | `true` | No |
-| `create-pr-on-failure` | Create PR if validation fails                | `true` | No |
+| `validation-and-merge-strategy` | Strategy for validation and merging (run-and-auto-merge, run-and-always-pr, skip-and-always-pr) | `run-and-auto-merge` | No |
 | `pr-labels` | PR labels (comma-separated)                  | `dependencies,nx-migration,automated` | No |
 | `commit-message-prefix` | Commit message prefix                        | `build` | No |
-| `skip-validation` | Skip validation and always create PR         | `false` | No |
 | `target-branch` | Target branch for changes                    | `main` | No |
 | `working-directory` | Working directory                            | `.` | No |
 | `push-migrations-json` | Push migrations.json to repository after successful migration | `false` | No |
@@ -133,7 +131,7 @@ jobs:
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    auto-merge-on-success: 'false'
+    validation-and-merge-strategy: 'run-and-always-pr'
     validation-commands: 'build,test,lint'
 ```
 
@@ -143,8 +141,7 @@ jobs:
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    skip-validation: 'true'
-    auto-merge-on-success: 'false'
+    validation-and-merge-strategy: 'skip-and-always-pr'
 ```
 
 ### Multiple Nx Packages

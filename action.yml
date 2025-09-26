@@ -37,15 +37,10 @@ inputs:
     required: false
     default: 'affected'
 
-  auto-merge-on-success:
-    description: 'Automatically push to main branch if validation passes'
+  validation-and-merge-strategy:
+    description: 'Validation and merge strategy (run-and-auto-merge, run-and-always-pr, skip-and-always-pr)'
     required: false
-    default: 'true'
-
-  create-pr-on-failure:
-    description: 'Create PR if validation fails'
-    required: false
-    default: 'true'
+    default: 'run-and-auto-merge'
 
   pr-labels:
     description: 'Labels to add to PRs (comma-separated)'
@@ -56,11 +51,6 @@ inputs:
     description: 'Prefix for commit messages'
     required: false
     default: 'build'
-
-  skip-validation:
-    description: 'Skip validation steps and always create PR'
-    required: false
-    default: 'false'
 
   target-branch:
     description: 'Target branch for merging changes'
@@ -288,7 +278,7 @@ runs:
 
     - name: Run validation
       id: validation
-      if: steps.check-update.outputs.updated == 'true' && inputs.skip-validation == 'false'
+      if: steps.check-update.outputs.updated == 'true' && (inputs.validation-and-merge-strategy == 'run-and-auto-merge' || inputs.validation-and-merge-strategy == 'run-and-always-pr')
       continue-on-error: true
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -327,8 +317,8 @@ runs:
     - name: Push to main branch
       if: |
         steps.check-update.outputs.updated == 'true' &&
-        (inputs.skip-validation == 'true' || steps.validation.outputs.result == 'success') &&
-        inputs.auto-merge-on-success == 'true'
+        inputs.validation-and-merge-strategy == 'run-and-auto-merge' &&
+        steps.validation.outputs.result == 'success'
       shell: bash
       run: |
         echo "Validation passed, pushing directly to ${{ inputs.target-branch }}"
@@ -339,8 +329,9 @@ runs:
       if: |
         steps.check-update.outputs.updated == 'true' &&
         (
-          (inputs.skip-validation == 'false' && steps.validation.outputs.result != 'success' && inputs.create-pr-on-failure == 'true') ||
-          (inputs.auto-merge-on-success == 'false')
+          inputs.validation-and-merge-strategy == 'run-and-always-pr' ||
+          inputs.validation-and-merge-strategy == 'skip-and-always-pr' ||
+          (inputs.validation-and-merge-strategy == 'run-and-auto-merge' && steps.validation.outputs.result != 'success')
         )
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -359,9 +350,12 @@ runs:
         echo "Git status: $(git status --short)"
         
         # Determine PR reason
-        if [[ "${{ inputs.auto-merge-on-success }}" == "false" ]]; then
-          PR_REASON="Manual review requested"
+        if [[ "${{ inputs.validation-and-merge-strategy }}" == "run-and-always-pr" ]]; then
+          PR_REASON="Manual review requested (always-pr strategy)"
           STATUS_EMOJI="🔍"
+        elif [[ "${{ inputs.validation-and-merge-strategy }}" == "skip-and-always-pr" ]]; then
+          PR_REASON="Validation skipped, manual review required"
+          STATUS_EMOJI="⏭️"
         else
           PR_REASON="Validation tests failed"
           STATUS_EMOJI="⚠️"

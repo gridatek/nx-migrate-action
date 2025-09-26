@@ -42,36 +42,29 @@ flowchart TD
     Y --> Z[🗑️ Clean up]
     Z --> N
 
-    N --> AA{skip-validation?}
+    N --> AA{Strategy?}
 
-    AA -->|true| AB[⏭️ Skip tests]
-    AB --> AC{auto-merge?}
+    AA -->|run-and-auto-merge| AB[🔍 Run tests]
+    AB --> AC[🎯 nx run-many]
+    AC --> AD{Pass?}
+    AD -->|Yes| AE[🚀 Push direct]
+    AD -->|No| AF[📝 Create PR]
 
-    AA -->|false| AD[🔍 Run tests]
-    AD --> AE[🎯 nx run-many]
-    AE --> AF{Pass?}
+    AA -->|run-and-always-pr| AG[🔍 Run tests]
+    AG --> AH[🎯 nx run-many]
+    AH --> AF
 
-    AF -->|Yes| AC
-    AF -->|No| AG[❌ Failed]
-    AG --> AH{create-pr?}
+    AA -->|skip-and-always-pr| AF
 
-    AH -->|true| AI[📝 Create PR]
-    AH -->|false| AJ[✅ No PR]
-
-    AC -->|true| AK[🚀 Push direct]
-    AC -->|false| AI
-
-    AK --> AL[✅ Auto-merged]
-    AI --> AM[✅ PR Created]
+    AE --> AI[✅ Auto-merged]
+    AF --> AJ[✅ PR Created]
 
     style A fill:#e1f5fe
     style G fill:#c8e6c9
-    style AL fill:#c8e6c9
-    style AM fill:#c8e6c9
+    style AI fill:#c8e6c9
     style AJ fill:#c8e6c9
     style S fill:#ffcdd2
     style R fill:#ffcdd2
-    style AG fill:#ffcdd2
     style X fill:#fff3e0
     style Z fill:#f3e5f5
 ```
@@ -104,16 +97,19 @@ flowchart TD
 - **📝 Add file / 💾 Commit audit**: Keep migrations.json in repository for audit trail
 - **🧹 Remove file / 🗑️ Clean up**: Remove migrations.json locally after successful migration
 
-### Validation Phase
-- **skip-validation?**: Check if validation should be bypassed
+### Strategy Decision
+- **Strategy?**: Check validation-and-merge-strategy setting
+- **run-and-auto-merge**: Run validation, auto-merge on success, PR on failure
+- **run-and-always-pr**: Run validation, always create PR
+- **skip-and-always-pr**: Skip validation, always create PR
+
+### Validation Phase (if strategy includes validation)
 - **🔍 Run tests**: Execute configured validation commands
 - **🎯 nx run-many**: Run `nx run-many --target=build,test --affected/all`
 - **Pass?**: Verify all validation commands succeeded
 
-### Branching Strategy
-- **auto-merge?**: Check if automatic merging is enabled
-- **create-pr?**: Check if PR should be created on validation failure
-- **🚀 Push direct**: Push changes directly to target branch
+### Final Actions
+- **🚀 Push direct**: Push changes directly to target branch (auto-merge)
 - **📝 Create PR**: Create pull request with detailed information
 
 ### Completion
@@ -141,13 +137,10 @@ flowchart TD
 - **`yes`**: Commits migrations.json to repository for audit trail
 - **`false`** (default): Removes migrations.json locally after success
 
-### 5. **Validation Control**
-- **skip-validation = true**: Bypasses all validation, goes to branching logic
-- **skip-validation = false**: Runs configured validation commands
-
-### 6. **Branching Strategy**
-- **Auto-merge**: Direct push to target branch if validation passes and enabled
-- **PR Creation**: Creates PR if validation fails or auto-merge disabled
+### 5. **Validation and Merge Strategy**
+- **run-and-auto-merge**: Run validation → auto-merge if pass, create PR if fail
+- **run-and-always-pr**: Run validation → always create PR regardless of result
+- **skip-and-always-pr**: Skip validation → always create PR
 
 ## 📝 Example Scenarios
 
@@ -189,12 +182,9 @@ Start → Setup → Install → Version Check → Migrate → Migration fails �
 | `nx-version-tag: canary/next` | Uses pre-release version |
 | `push-migrations-json: yes` | migrations.json preserved in Git history |
 | `push-migrations-json: false` | migrations.json removed after successful migration |
-| `auto-merge-on-success: true` | Direct push to target branch when validation passes |
-| `auto-merge-on-success: false` | Always create PR for review |
-| `skip-validation: true` | Skip validation commands, proceed to branching logic |
-| `skip-validation: false` | Run validation commands before branching |
-| `create-pr-on-failure: true` | Create PR when validation fails |
-| `create-pr-on-failure: false` | No PR creation on validation failure |
+| `validation-and-merge-strategy: run-and-auto-merge` | Run validation, auto-merge on success, PR on failure |
+| `validation-and-merge-strategy: run-and-always-pr` | Run validation, always create PR |
+| `validation-and-merge-strategy: skip-and-always-pr` | Skip validation, always create PR |
 | `validation-scope: affected` | Only validate affected projects |
 | `validation-scope: all` | Validate all projects in workspace |
 
