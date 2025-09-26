@@ -23,29 +23,38 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
           body: |
-            ## 🚀 Changes in v${{ steps.version.outputs.version }}
-            
-            See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
-            
+            ## 🚀 Nx Migration Action v${{ steps.version.outputs.version }}
+
+            Automatically migrate Nx workspaces to the latest version with validation and smart PR creation.
+
             ## 📦 Usage
-            
+
             ```yaml
             - uses: gridatek/nx-migrate-action@v${{ steps.version.outputs.version }}
               with:
                 github-token: ${{ secrets.GITHUB_TOKEN }}
+                package-manager: npm  # or yarn, pnpm
+                validation-commands: build,test
             ```
-            
+
+            ## ✨ Key Features
+
+            - **Multi-package manager support**: npm, yarn, pnpm
+            - **Smart branching**: Auto-merge on success or create PR on failure
+            - **Configurable validation**: Run build, test, lint with --affected or --all
+            - **Version tags**: Support for latest, canary, next versions
+
             ## 🔗 Documentation
-            
-            - [README.md](README.md) - Full documentation
-            - [Examples](examples/) - Usage examples
+
+            - [README.md](README.md) - Full documentation and examples
+            - [action.yml](action.yml) - All available inputs and outputs
 
           draft: false
           prerelease: false
@@ -65,16 +74,22 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
-          
-          git config user.name "Release Bot"
-          git config user.email "release-bot@users.noreply.github.com"
-          
-          # Delete existing major tag if it exists
-          git tag -d v$MAJOR_VERSION || true
-          git push origin :refs/tags/v$MAJOR_VERSION || true
-          
-          # Create new major tag
+
+          echo "Updating major version tag v$MAJOR_VERSION for release v$VERSION"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Delete existing major tag locally and remotely if it exists
+          if git tag -l "v$MAJOR_VERSION" | grep -q "v$MAJOR_VERSION"; then
+            echo "Deleting existing tag v$MAJOR_VERSION"
+            git tag -d v$MAJOR_VERSION
+            git push origin :refs/tags/v$MAJOR_VERSION || echo "Remote tag v$MAJOR_VERSION did not exist"
+          fi
+
+          # Create and push new major tag
+          echo "Creating new major tag v$MAJOR_VERSION pointing to v$VERSION"
           git tag v$MAJOR_VERSION
           git push origin v$MAJOR_VERSION
-          
-          echo "Updated major version tag: v$MAJOR_VERSION"
+
+          echo "✅ Successfully updated major version tag: v$MAJOR_VERSION"
