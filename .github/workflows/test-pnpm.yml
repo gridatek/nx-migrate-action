@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: pnpm
+          # No cache since pnpm-lock.yaml is created in test workspace
 
       - name: Get old Nx version
         id: nx-version
