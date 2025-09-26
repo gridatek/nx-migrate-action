@@ -1,4 +1,4 @@
-name: Test Action - NPM
+name: Test Action - PNPM
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test-npm:
-    name: Test with NPM
+  test-pnpm:
+    name: Test with PNPM
     runs-on: ubuntu-latest
 
     strategy:
@@ -20,11 +20,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Create pnpm-lock.yaml for caching
+        run: |
+          # Remove package-lock.json and create pnpm-lock.yaml in root for caching
+          rm -f package-lock.json
+          pnpm install --frozen-lockfile || pnpm install
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
+          cache: pnpm
 
       - name: Get old Nx version
         id: nx-version
@@ -68,8 +79,8 @@ jobs:
           }
           EOF
 
-          # Install dependencies with npm
-          npm install
+          # Install dependencies with pnpm
+          pnpm install
 
           # Verify workspace setup
           echo "=== Workspace created successfully ==="
@@ -81,7 +92,7 @@ jobs:
         uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          package-manager: npm
+          package-manager: pnpm
           node-version: ${{ matrix.node-version }}
           working-directory: './test-workspace'
           validation-commands: 'build,test'
@@ -91,44 +102,5 @@ jobs:
       - name: Verify outputs
         run: |
           echo "Action completed successfully"
-          echo "Package manager: npm"
+          echo "Package manager: pnpm"
           echo "Node version: ${{ matrix.node-version }}"
-
-  lint:
-    name: Lint Action
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Lint YAML files
-        uses: ibiqlik/action-yamllint@v3
-        with:
-          file_or_dir: action.yml
-          config_file: .yamllint.yml
-
-      - name: Validate action.yml
-        run: |
-          # Basic validation - check if action.yml is valid YAML and has required fields
-          echo "Validating action.yml structure..."
-
-          # Check if file exists
-          if [[ ! -f "action.yml" ]]; then
-            echo "❌ action.yml not found"
-            exit 1
-          fi
-
-          # Check if it's valid YAML (already done by yamllint above)
-          # Check for required fields
-          if ! grep -q "^name:" action.yml; then
-            echo "❌ Missing 'name' field in action.yml"
-            exit 1
-          fi
-
-          if ! grep -q "^runs:" action.yml; then
-            echo "❌ Missing 'runs' field in action.yml"
-            exit 1
-          fi
-
-          echo "✅ action.yml validation passed"
