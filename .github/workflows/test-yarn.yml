@@ -1,4 +1,4 @@
-name: Test Action - NPM
+name: Test Action - Yarn
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test-npm:
-    name: Test with NPM
+  test-yarn:
+    name: Test with Yarn
     runs-on: ubuntu-latest
 
     strategy:
@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          # Don't use cache since we test different package managers
+          cache: yarn
 
       - name: Get old Nx version
         id: nx-version
@@ -68,8 +68,8 @@ jobs:
           }
           EOF
 
-          # Install dependencies with npm
-          npm install
+          # Install dependencies with yarn
+          yarn install
 
           # Verify workspace setup
           echo "=== Workspace created successfully ==="
@@ -81,7 +81,7 @@ jobs:
         uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          package-manager: npm
+          package-manager: yarn
           node-version: ${{ matrix.node-version }}
           working-directory: './test-workspace'
           validation-commands: 'build,test'
@@ -91,24 +91,5 @@ jobs:
       - name: Verify outputs
         run: |
           echo "Action completed successfully"
-          echo "Package manager: npm"
+          echo "Package manager: yarn"
           echo "Node version: ${{ matrix.node-version }}"
-
-  lint:
-    name: Lint Action
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Lint YAML files
-        uses: ibiqlik/action-yamllint@v3
-        with:
-          file_or_dir: action.yml
-          config_file: .yamllint.yml
-
-      - name: Validate action.yml
-        uses: docker://rhymond/github-action-validator:latest
-        with:
-          file: action.yml
