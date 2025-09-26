@@ -69,6 +69,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Update major version tag
         run: |
@@ -80,19 +82,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Fetch all tags to see existing ones
-          git fetch --tags
-
-          # Delete existing major tag remotely if it exists
+          # Delete existing major tag if it exists (locally and remotely)
           if git tag -l "v$MAJOR_VERSION" | grep -q "v$MAJOR_VERSION"; then
-            echo "Deleting existing remote tag v$MAJOR_VERSION"
-            git push origin :refs/tags/v$MAJOR_VERSION || echo "Remote tag v$MAJOR_VERSION did not exist"
-            git tag -d v$MAJOR_VERSION || echo "Local tag v$MAJOR_VERSION did not exist"
+            echo "Deleting existing local tag v$MAJOR_VERSION"
+            git tag -d v$MAJOR_VERSION
           fi
+
+          echo "Deleting existing remote tag v$MAJOR_VERSION (if exists)"
+          git push origin :refs/tags/v$MAJOR_VERSION 2>/dev/null || echo "Remote tag v$MAJOR_VERSION did not exist"
 
           # Create and push new major tag
           echo "Creating new major tag v$MAJOR_VERSION pointing to v$VERSION"
           git tag v$MAJOR_VERSION
-          git push origin v$MAJOR_VERSION --force
+          git push origin v$MAJOR_VERSION
 
           echo "✅ Successfully updated major version tag: v$MAJOR_VERSION"
