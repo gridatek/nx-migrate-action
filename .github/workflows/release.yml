@@ -80,16 +80,19 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Delete existing major tag locally and remotely if it exists
+          # Fetch all tags to see existing ones
+          git fetch --tags
+
+          # Delete existing major tag remotely if it exists
           if git tag -l "v$MAJOR_VERSION" | grep -q "v$MAJOR_VERSION"; then
-            echo "Deleting existing tag v$MAJOR_VERSION"
-            git tag -d v$MAJOR_VERSION
+            echo "Deleting existing remote tag v$MAJOR_VERSION"
             git push origin :refs/tags/v$MAJOR_VERSION || echo "Remote tag v$MAJOR_VERSION did not exist"
+            git tag -d v$MAJOR_VERSION || echo "Local tag v$MAJOR_VERSION did not exist"
           fi
 
           # Create and push new major tag
           echo "Creating new major tag v$MAJOR_VERSION pointing to v$VERSION"
           git tag v$MAJOR_VERSION
-          git push origin v$MAJOR_VERSION
+          git push origin v$MAJOR_VERSION --force
 
           echo "✅ Successfully updated major version tag: v$MAJOR_VERSION"
