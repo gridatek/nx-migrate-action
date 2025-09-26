@@ -353,17 +353,23 @@ runs:
         *This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
 
         # Create PR
+        echo "Creating PR with title: ${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}"
+        echo "Base branch: ${{ inputs.target-branch }}"
+        echo "Head branch: ${BRANCH}"
+        echo "Labels: ${LABELS}"
+
         PR_URL=$(gh pr create \
           --title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
           --body "${PR_BODY}" \
           --label "${LABELS}" \
           --base ${{ inputs.target-branch }} \
-          --head ${BRANCH} 2>/dev/null || echo "")
+          --head ${BRANCH} 2>&1)
 
-        if [[ -n "$PR_URL" ]]; then
+        if [[ $? -eq 0 && -n "$PR_URL" ]]; then
           echo "pr-url=$PR_URL" >> $GITHUB_OUTPUT
           echo "✅ PR created: $PR_URL"
         else
+          echo "PR creation failed with output: $PR_URL"
           # Try to get existing PR URL
           EXISTING_PR=$(gh pr view ${BRANCH} --json url --jq '.url' 2>/dev/null || echo "")
           if [[ -n "$EXISTING_PR" ]]; then
