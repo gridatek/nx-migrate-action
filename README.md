@@ -71,22 +71,22 @@ jobs:
 
 ## Configuration Options
 
-| Input | Description | Default | Required |
-|-------|-------------|---------|----------|
-| `github-token` | GitHub token for creating PRs and pushing | `${{ github.token }}` | Yes |
-| `nx-package` | The Nx package to check for updates | `@nx/workspace` | No |
-| `version-tag` | Version tag to use (latest, canary, next) | `latest` | No |
-| `node-version` | Node.js version to use | `22` | No |
-| `package-manager` | Package manager (npm, yarn, pnpm) | `npm` | No |
-| `validation-commands` | Validation commands (comma-separated) | `build,test` | No |
-| `validation-scope` | Validation scope (all, affected) | `affected` | No |
-| `auto-merge-on-success` | Auto-push to main if validation passes | `true` | No |
-| `create-pr-on-failure` | Create PR if validation fails | `true` | No |
-| `pr-labels` | PR labels (comma-separated) | `dependencies,nx-migration,automated` | No |
-| `commit-message-prefix` | Commit message prefix | `build` | No |
-| `skip-validation` | Skip validation and always create PR | `false` | No |
-| `target-branch` | Target branch for changes | `main` | No |
-| `working-directory` | Working directory | `.` | No |
+| Input | Description                                  | Default | Required |
+|-------|----------------------------------------------|---------|----------|
+| `github-token` | GitHub token for creating PRs and pushing    | `${{ github.token }}` | Yes |
+| `nx-package` | The Nx package to check for updates          | `@nx/workspace` | No |
+| `nx-version-tag` | Nx version tag to use (latest, canary, next) | `latest` | No |
+| `node-version` | Node.js version to use                       | `22` | No |
+| `package-manager` | Package manager (npm, yarn, pnpm)            | `npm` | No |
+| `validation-commands` | Validation commands (comma-separated)        | `build,test` | No |
+| `validation-scope` | Validation scope (all, affected)             | `affected` | No |
+| `auto-merge-on-success` | Auto-push to main if validation passes       | `true` | No |
+| `create-pr-on-failure` | Create PR if validation fails                | `true` | No |
+| `pr-labels` | PR labels (comma-separated)                  | `dependencies,nx-migration,automated` | No |
+| `commit-message-prefix` | Commit message prefix                        | `build` | No |
+| `skip-validation` | Skip validation and always create PR         | `false` | No |
+| `target-branch` | Target branch for changes                    | `main` | No |
+| `working-directory` | Working directory                            | `.` | No |
 
 ## Outputs
 

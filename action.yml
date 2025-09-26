@@ -72,7 +72,7 @@ inputs:
     required: false
     default: '.'
 
-  version-tag:
+  nx-version-tag:
     description: 'Version tag to use when fetching updates (e.g., latest, beta, canary, next - see npm dist-tags)'
     required: false
     default: 'latest'
@@ -136,7 +136,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        echo "Using version-tag: ${{ inputs.version-tag }}"
+        echo "Using nx-version-tag: ${{ inputs.nx-version-tag }}"
         echo "Package to check: ${{ inputs.nx-package }}"
 
         # Show available dist-tags for debugging
@@ -146,15 +146,15 @@ runs:
         case "${{ inputs.package-manager }}" in
           npm)
             CURRENT_VERSION=$(npm list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.dependencies["${{ inputs.nx-package }}"].version // empty')
-            LATEST_VERSION=$(npm view ${{ inputs.nx-package }}@${{ inputs.version-tag }} version)
+            LATEST_VERSION=$(npm view ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version)
             ;;
           yarn)
             CURRENT_VERSION=$(yarn list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.data.trees[0].name // empty' | sed 's/.*@//')
-            LATEST_VERSION=$(yarn info ${{ inputs.nx-package }}@${{ inputs.version-tag }} version --json | jq -r '.data')
+            LATEST_VERSION=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version --json | jq -r '.data')
             ;;
           pnpm)
             CURRENT_VERSION=$(pnpm list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.[0].dependencies["${{ inputs.nx-package }}"].version // empty')
-            LATEST_VERSION=$(pnpm view ${{ inputs.nx-package }}@${{ inputs.version-tag }} version)
+            LATEST_VERSION=$(pnpm view ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version)
             ;;
         esac
 
@@ -177,7 +177,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         echo "Updating Nx from ${{ steps.check-update.outputs.current-version }} to ${{ steps.check-update.outputs.latest-version }}"
-        npx nx migrate ${{ inputs.version-tag }}
+        npx nx migrate ${{ inputs.nx-version-tag }}
 
     - name: Install dependencies after migration
       if: steps.check-update.outputs.updated == 'true'
