@@ -28,8 +28,8 @@ jobs:
       - name: Get old Nx version
         id: nx-version
         run: |
-          # Get an older stable version of Nx for testing migration
-          OLD_VERSION=$(npm view @nx/workspace versions --json | jq -r '.[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -20 | head -1 || echo "19.0.0")
+          # Get an older stable version of Nx for testing migration using yarn
+          OLD_VERSION=$(yarn info @nx/workspace versions --json | jq -r '.data[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -20 | head -1 || echo "19.0.0")
           echo "old-version=$OLD_VERSION" >> $GITHUB_OUTPUT
           echo "Using Nx version $OLD_VERSION for testing"
 
