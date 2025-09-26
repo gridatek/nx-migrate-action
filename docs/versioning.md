@@ -15,24 +15,24 @@ git checkout main
 git pull origin main
 
 # 2. Create and push version tag
-git tag -a "v1.0.0" -m "Release v1.0.0"
-git push origin "v1.0.0"
+git tag -a "v0.1.0" -m "Release v0.1.0"
+git push origin "v0.1.0"
 ```
 
 ## 📈 Version Numbers
 
-Follow [Semantic Versioning](https://semver.org/):
-- **v1.0.1** - Bug fixes
-- **v1.1.0** - New features
-- **v2.0.0** - Breaking changes
+Using 0.x.x versions for initial development:
+- **v0.0.1** - Initial patches
+- **v0.1.0** - New features (pre-1.0)
+- **v0.x.x** - Breaking changes allowed
 
 ## ✅ What Happens Next
 
 The release workflow automatically:
 - Creates GitHub release
-- Updates major version tag (v1, v2, etc.)
+- Updates major version tag (v0)
 - Generates release notes
 
 Users can then reference:
-- `@v1.0.0` - Specific version
-- `@v1` - Latest v1.x.x version
+- `@v0.1.0` - Specific version
+- `@v0` - Latest v0.x.x version

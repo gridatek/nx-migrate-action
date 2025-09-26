@@ -1,6 +1,6 @@
 {
   "name": "nx-migrate-action",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Automatically migrate Nx workspace to the latest version with validation and smart PR creation",
   "main": "action.yml",
   "repository": {
@@ -16,7 +16,7 @@
     "ci-cd",
     "dependency-update"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "Khalil LAGRIDA <khalil.lagrida@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/gridatek/nx-migrate-action/issues"

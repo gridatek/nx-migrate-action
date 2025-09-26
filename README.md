@@ -31,7 +31,7 @@ jobs:
         with:
           fetch-depth: 0
           
-      - uses: gridatek/nx-migrate-action@v1
+      - uses: gridatek/nx-migrate-action@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -57,7 +57,7 @@ jobs:
         with:
           fetch-depth: 0
           
-      - uses: gridatek/nx-migrate-action@v1
+      - uses: gridatek/nx-migrate-action@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           node-version: '18'
@@ -104,14 +104,14 @@ jobs:
 
 #### npm (default)
 ```yaml
-- uses: gridatek/nx-migrate-action@v1
+- uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 #### Yarn
 ```yaml
-- uses: gridatek/nx-migrate-action@v1
+- uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
     package-manager: 'yarn'
@@ -119,7 +119,7 @@ jobs:
 
 #### pnpm
 ```yaml
-- uses: gridatek/nx-migrate-action@v1
+- uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
     package-manager: 'pnpm'
@@ -128,7 +128,7 @@ jobs:
 ### Conservative Approach (Always Create PRs)
 
 ```yaml
-- uses: gridatek/nx-migrate-action@v1
+- uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
     auto-merge-on-success: 'false'
@@ -138,7 +138,7 @@ jobs:
 ### Skip Validation (Fast Updates)
 
 ```yaml
-- uses: gridatek/nx-migrate-action@v1
+- uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
     skip-validation: 'true'
@@ -155,12 +155,12 @@ steps:
     with:
       fetch-depth: 0
       
-  - uses: gridatek/nx-migrate-action@v1
+  - uses: gridatek/nx-migrate-action@v0
     with:
       github-token: ${{ secrets.GITHUB_TOKEN }}
       nx-package: '@nx/workspace'
       
-  - uses: gridatek/nx-migrate-action@v1
+  - uses: gridatek/nx-migrate-action@v0
     with:
       github-token: ${{ secrets.GITHUB_TOKEN }}
       nx-package: '@nx/angular'
@@ -238,7 +238,7 @@ permissions:
 Enable verbose logging:
 
 ```yaml
-- uses: gridatek/nx-migrate-action@v1
+- uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
   env:
