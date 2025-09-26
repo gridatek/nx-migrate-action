@@ -72,6 +72,11 @@ inputs:
     required: false
     default: 'latest'
 
+  create-missing-labels:
+    description: 'Create missing labels in the repository'
+    required: false
+    default: 'true'
+
 outputs:
   updated:
     description: 'Whether Nx was updated'
@@ -408,6 +413,8 @@ runs:
         # Create PR with explicit error handling
         echo "Executing: gh pr create..."
         set +e  # Don't exit on error
+
+        # Try to create PR with labels first
         PR_URL=$(gh pr create \
           --title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
           --body "${PR_BODY}" \
@@ -415,6 +422,63 @@ runs:
           --base ${{ inputs.target-branch }} \
           --head ${BRANCH} 2>&1)
         PR_EXIT_CODE=$?
+
+        # If PR creation failed due to labels, try without labels
+        if [[ $PR_EXIT_CODE -ne 0 && "$PR_URL" == *"not found"* ]]; then
+          echo "⚠️ Label creation failed, retrying without labels..."
+
+          # Create missing labels if enabled
+          if [[ "${{ inputs.create-missing-labels }}" == "true" ]]; then
+            echo "🏷️ Creating missing labels..."
+            IFS=' ' read -ra LABEL_ARRAY <<< "${LABELS}"
+            for label in "${LABEL_ARRAY[@]}"; do
+              case "$label" in
+                "dependencies")
+                  gh label create "$label" --description "Pull requests that update dependencies" --color "0366d6" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  ;;
+                "nx-migration")
+                  gh label create "$label" --description "Automated Nx workspace migrations" --color "7057ff" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  ;;
+                "automated")
+                  gh label create "$label" --description "Automated changes by GitHub Actions" --color "ededed" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  ;;
+                *)
+                  gh label create "$label" --description "Auto-created by nx-migrate action" --color "f9d0c4" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  ;;
+              esac
+            done
+          fi
+
+          # Retry PR creation
+          PR_URL=$(gh pr create \
+            --title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
+            --body "${PR_BODY}" \
+            --label "${LABELS}" \
+            --base ${{ inputs.target-branch }} \
+            --head ${BRANCH} 2>&1)
+          PR_EXIT_CODE=$?
+
+          # If still failing, create without labels
+          if [[ $PR_EXIT_CODE -ne 0 ]]; then
+            echo "⚠️ Still failing with labels, creating PR without labels..."
+            PR_URL=$(gh pr create \
+              --title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
+              --body "${PR_BODY}" \
+              --base ${{ inputs.target-branch }} \
+              --head ${BRANCH} 2>&1)
+            PR_EXIT_CODE=$?
+
+            # Try to add labels individually after PR creation
+            if [[ $PR_EXIT_CODE -eq 0 ]]; then
+              echo "✅ PR created without labels, attempting to add labels individually..."
+              IFS=' ' read -ra LABEL_ARRAY <<< "${LABELS}"
+              for label in "${LABEL_ARRAY[@]}"; do
+                gh pr edit ${BRANCH} --add-label "$label" 2>/dev/null && echo "  ✅ Added label: $label" || echo "  ⚠️ Failed to add label: $label"
+              done
+            fi
+          fi
+        fi
+
         set -e  # Re-enable exit on error
 
         echo "PR creation exit code: ${PR_EXIT_CODE}"
