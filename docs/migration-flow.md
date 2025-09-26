@@ -6,63 +6,63 @@ This diagram explains the complete nx-migrate-action process from setup to compl
 
 ```mermaid
 flowchart TD
-    A[🚀 Action Start] --> B[⚙️ Setup Node.js & Cache]
-    B --> C[📦 Install Dependencies]
-    C --> D[🔍 Check Current vs Latest Nx Version]
+    A[🚀 Start] --> B[⚙️ Setup Node.js]
+    B --> C[📦 Install deps]
+    C --> D[🔍 Check version]
     D --> E{Update needed?}
 
-    E -->|No| F[ℹ️ Already up to date]
-    F --> G[✅ Action Complete - No Changes]
+    E -->|No| F[ℹ️ Up to date]
+    F --> G[✅ Complete]
 
-    E -->|Yes| H[📈 Run nx migrate]
-    H --> I[🔧 Install dependencies after migration]
-    I --> J{migrations.json created?}
+    E -->|Yes| H[📈 nx migrate]
+    H --> I[🔧 Install deps]
+    I --> J{migrations.json?}
 
-    J -->|No| K[ℹ️ No migrations needed]
-    K --> L[📝 Commit package updates]
-    L --> M[⚙️ Setup Git user]
-    M --> N[✅ Continue to validation]
+    J -->|No| K[ℹ️ No migrations]
+    K --> L[📝 Commit updates]
+    L --> M[⚙️ Setup Git]
+    M --> N[Continue to validation]
 
-    J -->|Yes| O[📋 Display migration details]
-    O --> P[🔧 Run nx migrate --run-migrations]
-    P --> Q{Migration successful?}
+    J -->|Yes| O[📋 Show migrations]
+    O --> P[🔧 Run migrations]
+    P --> Q{Success?}
 
-    Q -->|No| R[❌ Migration Failed]
-    R --> S[💥 Action Fails]
+    Q -->|No| R[❌ Failed]
+    R --> S[💥 Exit]
 
-    Q -->|Yes| T[📝 Commit all changes]
-    T --> U{push-migrations-json = yes?}
+    Q -->|Yes| T[📝 Commit changes]
+    T --> U{push-migrations-json?}
 
-    U -->|Yes| V[📝 git add migrations.json]
-    V --> W[💾 git commit 'add migrations.json for audit trail']
-    W --> X[📁 Keep migrations.json in repo]
+    U -->|yes| V[📝 Add file]
+    V --> W[💾 Commit audit]
+    W --> X[📁 Keep file]
     X --> N
 
-    U -->|No| Y[🧹 rm migrations.json]
-    Y --> Z[🗑️ Remove file locally]
+    U -->|false| Y[🧹 Remove file]
+    Y --> Z[🗑️ Clean up]
     Z --> N
 
-    N --> AA{skip-validation = true?}
+    N --> AA{skip-validation?}
 
-    AA -->|Yes| AB[⏭️ Skip validation]
-    AB --> AC{auto-merge-on-success = true?}
+    AA -->|true| AB[⏭️ Skip tests]
+    AB --> AC{auto-merge?}
 
-    AA -->|No| AD[🔍 Run validation commands]
-    AD --> AE[🎯 nx run-many --target=build,test]
-    AE --> AF{Validation passes?}
+    AA -->|false| AD[🔍 Run tests]
+    AD --> AE[🎯 nx run-many]
+    AE --> AF{Pass?}
 
     AF -->|Yes| AC
-    AF -->|No| AG[❌ Validation Failed]
-    AG --> AH{create-pr-on-failure = true?}
+    AF -->|No| AG[❌ Failed]
+    AG --> AH{create-pr?}
 
-    AH -->|Yes| AI[📝 Create Pull Request]
-    AH -->|No| AJ[✅ Done - No PR Created]
+    AH -->|true| AI[📝 Create PR]
+    AH -->|false| AJ[✅ No PR]
 
-    AC -->|Yes| AK[🚀 Push to target branch]
-    AC -->|No| AI
+    AC -->|true| AK[🚀 Push direct]
+    AC -->|false| AI
 
-    AK --> AL[✅ Done - Auto-merged]
-    AI --> AM[✅ Done - PR Created]
+    AK --> AL[✅ Auto-merged]
+    AI --> AM[✅ PR Created]
 
     style A fill:#e1f5fe
     style G fill:#c8e6c9
