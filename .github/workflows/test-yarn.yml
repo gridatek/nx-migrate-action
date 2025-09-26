@@ -25,6 +25,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Create empty yarn.lock for setup
+        run: |
+          # Create empty yarn.lock to satisfy yarn requirements
+          touch yarn.lock
+
       - name: Get old Nx version
         id: nx-version
         run: |
