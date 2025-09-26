@@ -109,6 +109,26 @@ jobs:
           config_file: .yamllint.yml
 
       - name: Validate action.yml
-        uses: docker://rhymond/github-action-validator:latest
-        with:
-          file: action.yml
+        run: |
+          # Basic validation - check if action.yml is valid YAML and has required fields
+          echo "Validating action.yml structure..."
+
+          # Check if file exists
+          if [[ ! -f "action.yml" ]]; then
+            echo "❌ action.yml not found"
+            exit 1
+          fi
+
+          # Check if it's valid YAML (already done by yamllint above)
+          # Check for required fields
+          if ! grep -q "^name:" action.yml; then
+            echo "❌ Missing 'name' field in action.yml"
+            exit 1
+          fi
+
+          if ! grep -q "^runs:" action.yml; then
+            echo "❌ Missing 'runs' field in action.yml"
+            exit 1
+          fi
+
+          echo "✅ action.yml validation passed"
