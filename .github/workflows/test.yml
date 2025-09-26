@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         package-manager: [npm, yarn, pnpm]
         node-version: ['22', '24']
