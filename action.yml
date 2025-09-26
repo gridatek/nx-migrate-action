@@ -233,7 +233,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
-        git add .
+        git add . || git add -A
         if [[ $(git status --porcelain) ]]; then
           git commit -m "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
                      -m "Automated update by nx-migrate action" \
