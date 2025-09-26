@@ -25,6 +25,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          # Don't use cache since we test different package managers
 
       - name: Get old Nx version
         id: nx-version
@@ -74,9 +75,13 @@ jobs:
               npm install
               ;;
             yarn)
+              # Remove package-lock.json if it exists and install with yarn
+              rm -f package-lock.json
               yarn install
               ;;
             pnpm)
+              # Remove package-lock.json if it exists and install with pnpm
+              rm -f package-lock.json
               pnpm install
               ;;
           esac
