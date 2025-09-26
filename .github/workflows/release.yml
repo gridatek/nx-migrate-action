@@ -77,7 +77,7 @@ jobs:
           echo ""
           echo "🎯 Or create issue to automate this step"
           echo ""
-          echo "🔗 Direct link: https://github.com/${{ github.repository }}/releases/edit/v${{ steps.version.outputs.version }}"
+          echo "🔗 Direct link: https://github.com/${{ github.repository }}/releases/edit/${{ github.ref_name }}"
 
   update-major-tag:
     name: Update Major Version Tag
