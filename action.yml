@@ -376,14 +376,24 @@ runs:
         echo "GitHub token present: $([[ -n "$GITHUB_TOKEN" ]] && echo 'Yes' || echo 'No')"
         echo "PR body length: ${#PR_BODY} characters"
 
+        # Check if this is an org repo and what permissions we have
+        echo "Repository info:"
+        gh repo view --json owner,name,isOrganization || echo "Failed to get repo info"
+        echo "Token permissions:"
+        gh auth status || echo "Auth check failed"
+
+        # Create PR with explicit error handling
+        echo "Executing: gh pr create..."
+        set +e  # Don't exit on error
         PR_URL=$(gh pr create \
           --title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
           --body "${PR_BODY}" \
           --label "${LABELS}" \
           --base ${{ inputs.target-branch }} \
           --head ${BRANCH} 2>&1)
-
         PR_EXIT_CODE=$?
+        set -e  # Re-enable exit on error
+
         echo "PR creation exit code: ${PR_EXIT_CODE}"
         echo "PR creation output: ${PR_URL}"
 
