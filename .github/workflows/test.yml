@@ -25,6 +25,14 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Get old Nx version
+        id: nx-version
+        run: |
+          # Get an older version of Nx for testing migration
+          OLD_VERSION=$(npm view @nx/workspace versions --json | jq -r '.[-10]' || echo "16.0.0")
+          echo "old-version=$OLD_VERSION" >> $GITHUB_OUTPUT
+          echo "Using Nx version $OLD_VERSION for testing"
+
       - name: Create test Nx workspace
         run: |
           # Create a minimal test workspace
@@ -41,7 +49,7 @@ jobs:
               "test": "echo 'Tests complete'"
             },
             "dependencies": {
-              "@nx/workspace": "16.0.0"
+              "@nx/workspace": "${{ steps.nx-version.outputs.old-version }}"
             }
           }
           PACKAGE_EOF
