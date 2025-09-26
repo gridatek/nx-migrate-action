@@ -36,6 +36,9 @@ jobs:
 
       - name: Create test Nx workspace
         run: |
+          # Clean up any existing test workspace
+          rm -rf test-workspace
+
           # Create a minimal test workspace
           mkdir test-workspace
           cd test-workspace
@@ -85,9 +88,8 @@ jobs:
           package-manager: npm
           node-version: ${{ matrix.node-version }}
           working-directory: './test-workspace'
-          validation-commands: 'build,test'
-          auto-merge-on-success: 'false'
-          skip-validation: 'true'  # Skip validation for testing to avoid failures
+          validation-commands: 'build'
+          merge-strategy: 'always-pr'  # Always create PR for testing
 
       - name: Verify outputs
         run: |
