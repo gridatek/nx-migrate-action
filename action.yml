@@ -10,7 +10,7 @@ inputs:
   github-token:
     description: 'GitHub token for creating PRs and pushing changes'
     required: true
-    default: ${{ github.token }}
+    default: '${{ github.token }}'
 
   nx-package:
     description: 'The Nx package to check for updates'
@@ -20,17 +20,7 @@ inputs:
   node-version:
     description: 'Node.js version to use'
     required: false
-    default: '20'
-
-  java-version:
-    description: 'Java version to use (if needed for your project)'
-    required: false
-    default: '17'
-
-  java-distribution:
-    description: 'Java distribution to use'
-    required: false
-    default: 'temurin'
+    default: '22'
 
   package-manager:
     description: 'Package manager to use (npm, yarn, pnpm)'
@@ -82,10 +72,10 @@ inputs:
     required: false
     default: '.'
 
-  setup-java:
-    description: 'Whether to setup Java (needed for some Nx projects)'
+  version-tag:
+    description: 'Version tag to use when fetching updates (e.g., latest, beta, canary, next - see npm dist-tags)'
     required: false
-    default: 'false'
+    default: 'latest'
 
 outputs:
   updated:
@@ -121,13 +111,6 @@ runs:
         node-version: ${{ inputs.node-version }}
         cache: ${{ inputs.package-manager }}
 
-    - name: Setup Java
-      if: inputs.setup-java == 'true'
-      uses: actions/setup-java@v4
-      with:
-        distribution: ${{ inputs.java-distribution }}
-        java-version: ${{ inputs.java-version }}
-
     - name: Install dependencies
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -153,21 +136,28 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
+        echo "Using version-tag: ${{ inputs.version-tag }}"
+        echo "Package to check: ${{ inputs.nx-package }}"
+
+        # Show available dist-tags for debugging
+        echo "Available dist-tags:"
+        npm view ${{ inputs.nx-package }} dist-tags --json
+
         case "${{ inputs.package-manager }}" in
           npm)
             CURRENT_VERSION=$(npm list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.dependencies["${{ inputs.nx-package }}"].version // empty')
-            LATEST_VERSION=$(npm view ${{ inputs.nx-package }} version)
+            LATEST_VERSION=$(npm view ${{ inputs.nx-package }}@${{ inputs.version-tag }} version)
             ;;
           yarn)
             CURRENT_VERSION=$(yarn list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.data.trees[0].name // empty' | sed 's/.*@//')
-            LATEST_VERSION=$(yarn info ${{ inputs.nx-package }} version --json | jq -r '.data')
+            LATEST_VERSION=$(yarn info ${{ inputs.nx-package }}@${{ inputs.version-tag }} version --json | jq -r '.data')
             ;;
           pnpm)
             CURRENT_VERSION=$(pnpm list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.[0].dependencies["${{ inputs.nx-package }}"].version // empty')
-            LATEST_VERSION=$(pnpm view ${{ inputs.nx-package }} version)
+            LATEST_VERSION=$(pnpm view ${{ inputs.nx-package }}@${{ inputs.version-tag }} version)
             ;;
         esac
-        
+
         if [[ "$CURRENT_VERSION" != "$LATEST_VERSION" && -n "$LATEST_VERSION" && -n "$CURRENT_VERSION" ]]; then
           echo "Current version: $CURRENT_VERSION"
           echo "Latest version: $LATEST_VERSION"
@@ -187,7 +177,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         echo "Updating Nx from ${{ steps.check-update.outputs.current-version }} to ${{ steps.check-update.outputs.latest-version }}"
-        npx nx migrate latest
+        npx nx migrate ${{ inputs.version-tag }}
 
     - name: Install dependencies after migration
       if: steps.check-update.outputs.updated == 'true'
@@ -304,7 +294,7 @@ runs:
 
     - name: Push to main branch
       if: |
-        steps.check-update.outputs.updated == 'true' && 
+        steps.check-update.outputs.updated == 'true' &&
         (inputs.skip-validation == 'true' || steps.validation.outputs.result == 'success') &&
         inputs.auto-merge-on-success == 'true'
       shell: bash
@@ -315,7 +305,7 @@ runs:
     - name: Create PR
       id: create-pr
       if: |
-        steps.check-update.outputs.updated == 'true' && 
+        steps.check-update.outputs.updated == 'true' &&
         (
           (inputs.skip-validation == 'false' && steps.validation.outputs.result != 'success' && inputs.create-pr-on-failure == 'true') ||
           (inputs.auto-merge-on-success == 'false')
@@ -327,6 +317,14 @@ runs:
       run: |
         LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
         BRANCH="nx-migrate-${LATEST_VERSION}-${{ github.run_id }}-${{ github.run_attempt }}"
+
+        echo "=== PR Creation Debug Info ==="
+        echo "Latest version: ${LATEST_VERSION}"
+        echo "Run ID: ${{ github.run_id }}"
+        echo "Run attempt: ${{ github.run_attempt }}"
+        echo "Branch name: ${BRANCH}"
+        echo "Working directory: $(pwd)"
+        echo "Git status: $(git status --short)"
         
         # Determine PR reason
         if [[ "${{ inputs.auto-merge-on-success }}" == "false" ]]; then
@@ -339,7 +337,14 @@ runs:
         
         echo "Creating PR with branch: ${BRANCH}"
         git checkout -b ${BRANCH}
-        git push --set-upstream origin ${BRANCH}
+
+        # Try to push branch, handle conflicts gracefully
+        if ! git push --set-upstream origin ${BRANCH}; then
+          echo "Failed to push branch ${BRANCH}, trying with force..."
+          # Try to delete and recreate if branch exists
+          git push origin --delete ${BRANCH} 2>/dev/null || true
+          git push --set-upstream origin ${BRANCH}
+        fi
         
         # Convert labels to space-separated format for gh cli
         LABELS=$(echo "${{ inputs.pr-labels }}" | tr ',' ' ')
@@ -347,39 +352,74 @@ runs:
         # Create PR body
         PR_BODY="## 🚀 Nx Migration Update
 
-  **Version Update:** \`${{ steps.check-update.outputs.current-version }}\` → \`${LATEST_VERSION}\`
+        **Version Update:** \`${{ steps.check-update.outputs.current-version }}\` → \`${LATEST_VERSION}\`
 
-  **Status:** ${STATUS_EMOJI} ${PR_REASON}
+        **Status:** ${STATUS_EMOJI} ${PR_REASON}
 
-### Changes Made:
-- Updated Nx workspace to version ${LATEST_VERSION}
-- Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '❌ No' }}
-- Validation result: ${{ steps.validation.outputs.result || 'skipped' }}
+        ### Changes Made:
+        - Updated Nx workspace to version ${LATEST_VERSION}
+        - Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '❌ No' }}
+        - Validation result: ${{ steps.validation.outputs.result || 'skipped' }}
 
-### Package Manager: ${{ inputs.package-manager }}
-### Node Version: ${{ inputs.node-version }}
+        ### Package Manager: ${{ inputs.package-manager }}
+        ### Node Version: ${{ inputs.node-version }}
 
----
-*This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
-  
-  # Create PR
-  PR_URL=$(gh pr create \
---title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
-  --body "${PR_BODY}" \
-  --label "${LABELS}" \
-  --base ${{ inputs.target-branch }} \
-  --head ${BRANCH} 2>/dev/null || echo "")
-  
-  if [[ -n "$PR_URL" ]]; then
-  echo "pr-url=$PR_URL" >> $GITHUB_OUTPUT
-echo "✅ PR created: $PR_URL"
-  else
-  # Try to get existing PR URL
-  EXISTING_PR=$(gh pr view ${BRANCH} --json url --jq '.url' 2>/dev/null || echo "")
-  if [[ -n "$EXISTING_PR" ]]; then
-  echo "pr-url=$EXISTING_PR" >> $GITHUB_OUTPUT
-echo "ℹ️ PR already exists: $EXISTING_PR"
-  else
-  echo "❌ Failed to create or find PR"
-  fi
-  fi
+        ---
+        *This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
+
+        # Create PR
+        echo "=== Creating PR ==="
+        echo "Title: ${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}"
+        echo "Base branch: ${{ inputs.target-branch }}"
+        echo "Head branch: ${BRANCH}"
+        echo "Labels: ${LABELS}"
+        echo "GitHub token present: $([[ -n "$GITHUB_TOKEN" ]] && echo 'Yes' || echo 'No')"
+        echo "PR body length: ${#PR_BODY} characters"
+
+        # Check if this is an org repo and what permissions we have
+        echo "Repository info:"
+        gh repo view --json owner,name,isOrganization || echo "Failed to get repo info"
+        echo "Token permissions:"
+        gh auth status || echo "Auth check failed"
+
+        # Create PR with explicit error handling
+        echo "Executing: gh pr create..."
+        set +e  # Don't exit on error
+        PR_URL=$(gh pr create \
+          --title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
+          --body "${PR_BODY}" \
+          --label "${LABELS}" \
+          --base ${{ inputs.target-branch }} \
+          --head ${BRANCH} 2>&1)
+        PR_EXIT_CODE=$?
+        set -e  # Re-enable exit on error
+
+        echo "PR creation exit code: ${PR_EXIT_CODE}"
+        echo "PR creation output: ${PR_URL}"
+
+        if [[ $PR_EXIT_CODE -eq 0 && -n "$PR_URL" ]]; then
+          echo "pr-url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "✅ PR created successfully: $PR_URL"
+        else
+          echo "❌ PR creation failed"
+          echo "Exit code: ${PR_EXIT_CODE}"
+          echo "Output: ${PR_URL}"
+
+          # Try to get existing PR URL
+          echo "Checking for existing PR..."
+          EXISTING_PR=$(gh pr view ${BRANCH} --json url --jq '.url' 2>/dev/null || echo "")
+          if [[ -n "$EXISTING_PR" ]]; then
+            echo "pr-url=$EXISTING_PR" >> $GITHUB_OUTPUT
+            echo "ℹ️ PR already exists: $EXISTING_PR"
+          else
+            echo "No existing PR found"
+            # Additional debugging
+            echo "=== Debugging Info ==="
+            echo "Current branch: $(git branch --show-current)"
+            echo "Remote branches: $(git branch -r | head -5)"
+            echo "GitHub CLI auth status:"
+            gh auth status || echo "GitHub CLI auth failed"
+            echo "Repository info:"
+            gh repo view --json name,owner,defaultBranch || echo "Failed to get repo info"
+          fi
+        fi
