@@ -22,16 +22,6 @@ inputs:
     required: false
     default: '20'
 
-  java-version:
-    description: 'Java version to use (if needed for your project)'
-    required: false
-    default: '17'
-
-  java-distribution:
-    description: 'Java distribution to use'
-    required: false
-    default: 'temurin'
-
   package-manager:
     description: 'Package manager to use (npm, yarn, pnpm)'
     required: false
@@ -82,11 +72,6 @@ inputs:
     required: false
     default: '.'
 
-  setup-java:
-    description: 'Whether to setup Java (needed for some Nx projects)'
-    required: false
-    default: 'false'
-
 outputs:
   updated:
     description: 'Whether Nx was updated'
@@ -120,13 +105,6 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         cache: ${{ inputs.package-manager }}
-
-    - name: Setup Java
-      if: inputs.setup-java == 'true'
-      uses: actions/setup-java@v4
-      with:
-        distribution: ${{ inputs.java-distribution }}
-        java-version: ${{ inputs.java-version }}
 
     - name: Install dependencies
       shell: bash

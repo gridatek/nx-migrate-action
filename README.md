@@ -64,8 +64,6 @@ jobs:
           package-manager: 'pnpm'
           validation-commands: 'build,test,lint,e2e'
           validation-scope: 'all'
-          setup-java: 'true'
-          java-version: '21'
           auto-merge-on-success: 'false'
           pr-labels: 'dependencies,nx-migration,high-priority'
           target-branch: 'develop'
@@ -78,8 +76,6 @@ jobs:
 | `github-token` | GitHub token for creating PRs and pushing | `${{ github.token }}` | ✅ |
 | `nx-package` | The Nx package to check for updates | `@nx/workspace` | ❌ |
 | `node-version` | Node.js version to use | `20` | ❌ |
-| `java-version` | Java version (if needed) | `17` | ❌ |
-| `java-distribution` | Java distribution | `temurin` | ❌ |
 | `package-manager` | Package manager (npm, yarn, pnpm) | `npm` | ❌ |
 | `validation-commands` | Validation commands (comma-separated) | `build,test` | ❌ |
 | `validation-scope` | Validation scope (all, affected) | `affected` | ❌ |
@@ -90,7 +86,6 @@ jobs:
 | `skip-validation` | Skip validation and always create PR | `false` | ❌ |
 | `target-branch` | Target branch for changes | `main` | ❌ |
 | `working-directory` | Working directory | `.` | ❌ |
-| `setup-java` | Whether to setup Java | `false` | ❌ |
 
 ## Outputs
 
@@ -128,18 +123,6 @@ jobs:
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
     package-manager: 'pnpm'
-```
-
-### Monorepo with Java Projects
-
-```yaml
-- uses: gridatek/nx-migrate-action@v1
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-    setup-java: 'true'
-    java-version: '21'
-    validation-commands: 'build,test,e2e'
-    validation-scope: 'all'
 ```
 
 ### Conservative Approach (Always Create PRs)
