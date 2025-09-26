@@ -10,7 +10,7 @@ inputs:
   github-token:
     description: 'GitHub token for creating PRs and pushing changes'
     required: true
-    default: ${{ github.token }}
+    default: '${{ github.token }}'
 
   nx-package:
     description: 'The Nx package to check for updates'
@@ -282,7 +282,7 @@ runs:
 
     - name: Push to main branch
       if: |
-        steps.check-update.outputs.updated == 'true' && 
+        steps.check-update.outputs.updated == 'true' &&
         (inputs.skip-validation == 'true' || steps.validation.outputs.result == 'success') &&
         inputs.auto-merge-on-success == 'true'
       shell: bash
@@ -293,7 +293,7 @@ runs:
     - name: Create PR
       id: create-pr
       if: |
-        steps.check-update.outputs.updated == 'true' && 
+        steps.check-update.outputs.updated == 'true' &&
         (
           (inputs.skip-validation == 'false' && steps.validation.outputs.result != 'success' && inputs.create-pr-on-failure == 'true') ||
           (inputs.auto-merge-on-success == 'false')
@@ -325,39 +325,39 @@ runs:
         # Create PR body
         PR_BODY="## 🚀 Nx Migration Update
 
-  **Version Update:** \`${{ steps.check-update.outputs.current-version }}\` → \`${LATEST_VERSION}\`
+        **Version Update:** \`${{ steps.check-update.outputs.current-version }}\` → \`${LATEST_VERSION}\`
 
-  **Status:** ${STATUS_EMOJI} ${PR_REASON}
+        **Status:** ${STATUS_EMOJI} ${PR_REASON}
 
-### Changes Made:
-- Updated Nx workspace to version ${LATEST_VERSION}
-- Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '❌ No' }}
-- Validation result: ${{ steps.validation.outputs.result || 'skipped' }}
+        ### Changes Made:
+        - Updated Nx workspace to version ${LATEST_VERSION}
+        - Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '❌ No' }}
+        - Validation result: ${{ steps.validation.outputs.result || 'skipped' }}
 
-### Package Manager: ${{ inputs.package-manager }}
-### Node Version: ${{ inputs.node-version }}
+        ### Package Manager: ${{ inputs.package-manager }}
+        ### Node Version: ${{ inputs.node-version }}
 
----
-*This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
-  
-  # Create PR
-  PR_URL=$(gh pr create \
---title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
-  --body "${PR_BODY}" \
-  --label "${LABELS}" \
-  --base ${{ inputs.target-branch }} \
-  --head ${BRANCH} 2>/dev/null || echo "")
-  
-  if [[ -n "$PR_URL" ]]; then
-  echo "pr-url=$PR_URL" >> $GITHUB_OUTPUT
-echo "✅ PR created: $PR_URL"
-  else
-  # Try to get existing PR URL
-  EXISTING_PR=$(gh pr view ${BRANCH} --json url --jq '.url' 2>/dev/null || echo "")
-  if [[ -n "$EXISTING_PR" ]]; then
-  echo "pr-url=$EXISTING_PR" >> $GITHUB_OUTPUT
-echo "ℹ️ PR already exists: $EXISTING_PR"
-  else
-  echo "❌ Failed to create or find PR"
-  fi
-  fi
+        ---
+        *This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
+
+        # Create PR
+        PR_URL=$(gh pr create \
+          --title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
+          --body "${PR_BODY}" \
+          --label "${LABELS}" \
+          --base ${{ inputs.target-branch }} \
+          --head ${BRANCH} 2>/dev/null || echo "")
+
+        if [[ -n "$PR_URL" ]]; then
+          echo "pr-url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "✅ PR created: $PR_URL"
+        else
+          # Try to get existing PR URL
+          EXISTING_PR=$(gh pr view ${BRANCH} --json url --jq '.url' 2>/dev/null || echo "")
+          if [[ -n "$EXISTING_PR" ]]; then
+            echo "pr-url=$EXISTING_PR" >> $GITHUB_OUTPUT
+            echo "ℹ️ PR already exists: $EXISTING_PR"
+          else
+            echo "❌ Failed to create or find PR"
+          fi
+        fi
