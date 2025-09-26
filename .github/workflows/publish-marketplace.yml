@@ -14,48 +14,49 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Attempt Marketplace Publication
+      - name: Check Release and Provide Instructions
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           RELEASE_TAG="${{ github.event.inputs.release_tag }}"
-          echo "🚀 Attempting to publish $RELEASE_TAG to GitHub Marketplace..."
+          echo "🚀 Checking release $RELEASE_TAG for marketplace publication..."
 
-          # Get release information
-          RELEASE_INFO=$(gh api repos/${{ github.repository }}/releases/tags/$RELEASE_TAG)
-          RELEASE_ID=$(echo "$RELEASE_INFO" | jq -r '.id')
+          # Get release information with error handling
+          if RELEASE_INFO=$(gh api repos/${{ github.repository }}/releases/tags/$RELEASE_TAG 2>/dev/null); then
+            RELEASE_ID=$(echo "$RELEASE_INFO" | jq -r '.id')
+            IS_DRAFT=$(echo "$RELEASE_INFO" | jq -r '.draft // false')
 
-          echo "📋 Release ID: $RELEASE_ID"
-          echo "📋 Release Tag: $RELEASE_TAG"
+            echo "📋 Release ID: $RELEASE_ID"
+            echo "📋 Release Tag: $RELEASE_TAG"
+            echo "📋 Is Draft: $IS_DRAFT"
 
-          # Check if already published to marketplace
-          IS_MARKETPLACE=$(echo "$RELEASE_INFO" | jq -r '.draft // false')
-
-          if [[ "$IS_MARKETPLACE" == "false" ]]; then
-            echo "✅ Release is already published and not a draft"
-
-            # Try to get marketplace info (this might not work)
-            echo "🔍 Checking marketplace status..."
-            gh api repos/${{ github.repository }}/releases/$RELEASE_ID || echo "Could not check marketplace status"
-
-            echo ""
-            echo "📋 Manual steps still required:"
-            echo "1. Go to: https://github.com/${{ github.repository }}/releases"
-            echo "2. Click 'Edit' on release $RELEASE_TAG"
-            echo "3. Check ☑️ 'Publish this Action to the GitHub Marketplace'"
-            echo "4. Select category: 'Continuous Integration'"
-            echo "5. Add description: 'Automatically migrate Nx workspaces with validation and smart PR creation'"
-            echo "6. Click 'Update release'"
-            echo ""
-            echo "🔗 Direct edit link: https://github.com/${{ github.repository }}/releases/edit/$RELEASE_TAG"
+            if [[ "$IS_DRAFT" == "false" ]]; then
+              echo "✅ Release is published and ready for marketplace"
+            else
+              echo "⚠️ Release is still a draft - publish it first"
+            fi
           else
-            echo "⚠️ Release is still a draft, cannot publish to marketplace"
+            echo "❌ Release $RELEASE_TAG not found!"
+            echo "Please create the release first: https://github.com/${{ github.repository }}/releases/new"
+            exit 1
           fi
+
+          echo ""
+          echo "📋 Manual marketplace publication steps:"
+          echo "1. Go to: https://github.com/${{ github.repository }}/releases"
+          echo "2. Click 'Edit' on release $RELEASE_TAG"
+          echo "3. Check ☑️ 'Publish this Action to the GitHub Marketplace'"
+          echo "4. Select category: 'Continuous Integration'"
+          echo "5. Add description: 'Automatically migrate Nx workspaces with validation and smart PR creation'"
+          echo "6. Click 'Update release'"
+          echo ""
+          echo "🔗 Direct edit link: https://github.com/${{ github.repository }}/releases/edit/$RELEASE_TAG"
 
       - name: Create Marketplace Issue
         env:
