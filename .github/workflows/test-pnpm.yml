@@ -25,11 +25,17 @@ jobs:
         with:
           version: 8
 
+      - name: Create pnpm-lock.yaml for caching
+        run: |
+          # Remove package-lock.json and create pnpm-lock.yaml in root for caching
+          rm -f package-lock.json
+          pnpm install --frozen-lockfile || pnpm install
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          # No cache since pnpm-lock.yaml is created in test workspace
+          cache: pnpm
 
       - name: Get old Nx version
         id: nx-version

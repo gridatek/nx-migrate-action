@@ -20,11 +20,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Create yarn.lock for caching
+        run: |
+          # Remove package-lock.json and create yarn.lock in root for caching
+          rm -f package-lock.json
+          yarn install --frozen-lockfile || yarn install
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          # No cache since yarn.lock is created in test workspace
+          cache: yarn
 
       - name: Get old Nx version
         id: nx-version
