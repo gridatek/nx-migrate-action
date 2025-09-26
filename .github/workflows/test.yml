@@ -40,7 +40,7 @@ jobs:
           cd test-workspace
 
           # Create package.json first
-          cat > package.json << 'PACKAGE_EOF'
+          cat > package.json << EOF
           {
             "name": "test-workspace",
             "version": "1.0.0",
@@ -52,7 +52,7 @@ jobs:
               "@nx/workspace": "${{ steps.nx-version.outputs.old-version }}"
             }
           }
-          PACKAGE_EOF
+          EOF
 
           # Create nx.json
           cat > nx.json << EOF
