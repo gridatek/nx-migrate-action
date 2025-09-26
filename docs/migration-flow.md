@@ -1,103 +1,155 @@
-# 🔄 Migration Flow Diagram
+# 🔄 Complete Action Flow Diagram
 
-This diagram explains how the nx-migrate-action handles migrations.json in different scenarios.
+This diagram explains the complete nx-migrate-action process from setup to completion.
 
 ## 📊 Flow Chart
 
 ```mermaid
 flowchart TD
-    A[🚀 Start Migration] --> B[📦 Run nx migrate latest]
-    B --> C{migrations.json created?}
+    A[🚀 Action Start] --> B[⚙️ Setup Node.js & Cache]
+    B --> C[📦 Install Dependencies]
+    C --> D[🔍 Check Current vs Latest Nx Version]
+    D --> E{Update needed?}
 
-    C -->|No| D[ℹ️ No migrations needed]
-    D --> E[✅ Migration Complete]
+    E -->|No| F[ℹ️ Already up to date]
+    F --> G[✅ Action Complete - No Changes]
 
-    C -->|Yes| F[📋 Display migration details]
-    F --> G[🔧 Run nx migrate --run-migrations]
-    G --> H{Migration successful?}
+    E -->|Yes| H[📈 Run nx migrate]
+    H --> I[🔧 Install dependencies after migration]
+    I --> J{migrations.json created?}
 
-    H -->|No| I[❌ Migration Failed]
-    I --> J[💥 Action Fails]
+    J -->|No| K[ℹ️ No migrations needed]
+    K --> L[📝 Commit package updates]
+    L --> M[⚙️ Setup Git user]
+    M --> N[✅ Continue to validation]
 
-    H -->|Yes| K{push-migrations-json = yes?}
+    J -->|Yes| O[📋 Display migration details]
+    O --> P[🔧 Run nx migrate --run-migrations]
+    P --> Q{Migration successful?}
 
-    K -->|Yes| L[📝 git add migrations.json]
-    L --> M[💾 git commit 'add migrations.json for audit trail']
-    M --> N[📁 Keep migrations.json in repo]
-    N --> O[✅ Continue to validation]
+    Q -->|No| R[❌ Migration Failed]
+    R --> S[💥 Action Fails]
 
-    K -->|No| P[🧹 rm migrations.json]
-    P --> Q[🗑️ Remove file locally]
-    Q --> O[✅ Continue to validation]
+    Q -->|Yes| T[📝 Commit all changes]
+    T --> U{push-migrations-json = yes?}
 
-    O --> R[🔍 Run validation tests]
-    R --> S{Validation passes?}
+    U -->|Yes| V[📝 git add migrations.json]
+    V --> W[💾 git commit 'add migrations.json for audit trail']
+    W --> X[📁 Keep migrations.json in repo]
+    X --> N
 
-    S -->|Yes & auto-merge=true| T[🚀 Push to main branch]
-    S -->|No or auto-merge=false| U[📝 Create Pull Request]
+    U -->|No| Y[🧹 rm migrations.json]
+    Y --> Z[🗑️ Remove file locally]
+    Z --> N
 
-    T --> V[✅ Done - Auto-merged]
-    U --> W[✅ Done - PR Created]
+    N --> AA{skip-validation = true?}
+
+    AA -->|Yes| AB[⏭️ Skip validation]
+    AB --> AC{auto-merge-on-success = true?}
+
+    AA -->|No| AD[🔍 Run validation commands]
+    AD --> AE[🎯 nx run-many --target=build,test]
+    AE --> AF{Validation passes?}
+
+    AF -->|Yes| AC
+    AF -->|No| AG[❌ Validation Failed]
+    AG --> AH{create-pr-on-failure = true?}
+
+    AH -->|Yes| AI[📝 Create Pull Request]
+    AH -->|No| AJ[✅ Done - No PR Created]
+
+    AC -->|Yes| AK[🚀 Push to target branch]
+    AC -->|No| AI
+
+    AK --> AL[✅ Done - Auto-merged]
+    AI --> AM[✅ Done - PR Created]
 
     style A fill:#e1f5fe
-    style E fill:#c8e6c9
-    style V fill:#c8e6c9
-    style W fill:#c8e6c9
-    style J fill:#ffcdd2
-    style I fill:#ffcdd2
-    style N fill:#fff3e0
-    style Q fill:#f3e5f5
+    style G fill:#c8e6c9
+    style AL fill:#c8e6c9
+    style AM fill:#c8e6c9
+    style AJ fill:#c8e6c9
+    style S fill:#ffcdd2
+    style R fill:#ffcdd2
+    style AG fill:#ffcdd2
+    style X fill:#fff3e0
+    style Z fill:#f3e5f5
 ```
 
 ## 🎯 Key Decision Points
 
-### 1. **migrations.json Creation**
-- **Created**: Nx found changes requiring migrations
-- **Not Created**: No migrations needed, process continues
+### 1. **Update Check**
+- **Update Available**: Proceeds with migration process
+- **Already Up-to-date**: Action completes successfully with no changes
 
-### 2. **Migration Execution**
-- **Success**: Migrations applied successfully
+### 2. **migrations.json Creation**
+- **Created**: Nx found changes requiring migrations
+- **Not Created**: No migrations needed, commits package updates only
+
+### 3. **Migration Execution**
+- **Success**: Migrations applied successfully, continues to validation
 - **Failure**: Action stops and reports error
 
-### 3. **push-migrations-json Option**
+### 4. **push-migrations-json Option**
 - **`yes`**: Commits migrations.json to repository for audit trail
 - **`false`** (default): Removes migrations.json locally after success
 
-### 4. **Validation & Branching**
-- **Auto-merge**: Direct push to main if validation passes
+### 5. **Validation Control**
+- **skip-validation = true**: Bypasses all validation, goes to branching logic
+- **skip-validation = false**: Runs configured validation commands
+
+### 6. **Branching Strategy**
+- **Auto-merge**: Direct push to target branch if validation passes and enabled
 - **PR Creation**: Creates PR if validation fails or auto-merge disabled
 
 ## 📝 Example Scenarios
 
-### Scenario A: Standard Migration (push-migrations-json: false)
+### Scenario A: Complete Success with Auto-merge
 ```
-Nx Update → migrations.json created → Migrations run → File removed → Validation → Auto-merge/PR
-```
-
-### Scenario B: Audit Trail (push-migrations-json: yes)
-```
-Nx Update → migrations.json created → Migrations run → File committed → Validation → Auto-merge/PR
+Start → Setup → Install → Version Check → Migrate → Run Migrations → Validate → Auto-merge ✅
 ```
 
-### Scenario C: No Migrations Needed
+### Scenario B: Validation Failure with PR Creation
 ```
-Nx Update → No migrations.json → Validation → Auto-merge/PR
+Start → Setup → Install → Version Check → Migrate → Run Migrations → Validate ❌ → Create PR
 ```
 
-### Scenario D: Migration Failure
+### Scenario C: No Update Needed
 ```
-Nx Update → migrations.json created → Migrations fail → Action fails ❌
+Start → Setup → Install → Version Check → Already up-to-date ✅
+```
+
+### Scenario D: Skip Validation with PR
+```
+Start → Setup → Install → Version Check → Migrate → Skip Validation → Create PR
+```
+
+### Scenario E: Migration File Audit Trail
+```
+Start → Setup → Install → Version Check → Migrate → Commit migrations.json → Validate → Auto-merge/PR
+```
+
+### Scenario F: Migration Execution Failure
+```
+Start → Setup → Install → Version Check → Migrate → Migration fails ❌ → Action fails
 ```
 
 ## 🔧 Configuration Impact
 
 | Setting | Result |
 |---------|--------|
+| `nx-version-tag: latest` | Uses stable release version |
+| `nx-version-tag: canary/next` | Uses pre-release version |
 | `push-migrations-json: yes` | migrations.json preserved in Git history |
 | `push-migrations-json: false` | migrations.json removed after successful migration |
-| `auto-merge-on-success: true` | Direct push to main when validation passes |
+| `auto-merge-on-success: true` | Direct push to target branch when validation passes |
 | `auto-merge-on-success: false` | Always create PR for review |
-| `skip-validation: true` | Skip validation, always create PR |
+| `skip-validation: true` | Skip validation commands, proceed to branching logic |
+| `skip-validation: false` | Run validation commands before branching |
+| `create-pr-on-failure: true` | Create PR when validation fails |
+| `create-pr-on-failure: false` | No PR creation on validation failure |
+| `validation-scope: affected` | Only validate affected projects |
+| `validation-scope: all` | Validate all projects in workspace |
 
 ## 🎨 Legend
 
