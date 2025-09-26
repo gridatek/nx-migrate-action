@@ -1,0 +1,170 @@
+name: Clean Up Nx Migration PRs
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'close'
+        type: choice
+        options:
+          - close
+          - delete-branch
+          - close-and-delete
+      pr-filter:
+        description: 'Filter PRs by title pattern'
+        required: false
+        default: 'build: update nx to version'
+        type: string
+      dry-run:
+        description: 'Dry run - only show what would be done'
+        required: false
+        default: true
+        type: boolean
+
+  schedule:
+    # Run daily at 2 AM to clean up old migration PRs
+    - cron: '0 2 * * *'
+
+jobs:
+  cleanup-prs:
+    name: Clean Up Nx Migration PRs
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set default values for scheduled runs
+        if: github.event_name == 'schedule'
+        run: |
+          echo "ACTION=close" >> $GITHUB_ENV
+          echo "PR_FILTER=build: update nx to version" >> $GITHUB_ENV
+          echo "DRY_RUN=false" >> $GITHUB_ENV
+          echo "MAX_AGE_DAYS=7" >> $GITHUB_ENV
+
+      - name: Set values for manual runs
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "ACTION=${{ github.event.inputs.action }}" >> $GITHUB_ENV
+          echo "PR_FILTER=${{ github.event.inputs.pr-filter }}" >> $GITHUB_ENV
+          echo "DRY_RUN=${{ github.event.inputs.dry-run }}" >> $GITHUB_ENV
+          echo "MAX_AGE_DAYS=1" >> $GITHUB_ENV
+
+      - name: Find and process nx-migrate PRs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== Nx Migration PR Cleanup ==="
+          echo "Action: $ACTION"
+          echo "Filter: $PR_FILTER"
+          echo "Dry run: $DRY_RUN"
+          echo "Max age: $MAX_AGE_DAYS days"
+          echo ""
+
+          # Get all open PRs with nx-migration label or matching title
+          echo "🔍 Finding nx-migrate PRs..."
+
+          # Search by title pattern
+          TITLE_PRS=$(gh pr list --state open --json number,title,createdAt,headRefName --jq "
+            .[] | select(.title | test(\"$PR_FILTER\"; \"i\")) |
+            {number: .number, title: .title, created: .createdAt, branch: .headRefName}
+          ")
+
+          # Search by label
+          LABEL_PRS=$(gh pr list --state open --label "nx-migration" --json number,title,createdAt,headRefName --jq "
+            .[] | {number: .number, title: .title, created: .createdAt, branch: .headRefName}
+          ")
+
+          # Combine and deduplicate results
+          ALL_PRS=$(echo "$TITLE_PRS$LABEL_PRS" | jq -s 'flatten | unique_by(.number)')
+
+          if [[ "$ALL_PRS" == "[]" || -z "$ALL_PRS" ]]; then
+            echo "✅ No nx-migrate PRs found to clean up"
+            exit 0
+          fi
+
+          echo "📋 Found PRs to process:"
+          echo "$ALL_PRS" | jq -r '.[] | "  #\(.number): \(.title) (created: \(.created))"'
+          echo ""
+
+          # Filter by age for scheduled runs
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "🕒 Filtering PRs older than $MAX_AGE_DAYS days..."
+            CUTOFF_DATE=$(date -d "$MAX_AGE_DAYS days ago" --iso-8601)
+            FILTERED_PRS=$(echo "$ALL_PRS" | jq --arg cutoff "$CUTOFF_DATE" '
+              [.[] | select(.created < $cutoff)]
+            ')
+          else
+            FILTERED_PRS="$ALL_PRS"
+          fi
+
+          if [[ "$FILTERED_PRS" == "[]" || -z "$FILTERED_PRS" ]]; then
+            echo "✅ No PRs match the age criteria"
+            exit 0
+          fi
+
+          echo "🎯 Processing PRs:"
+          echo "$FILTERED_PRS" | jq -r '.[] | "  #\(.number): \(.title)"'
+          echo ""
+
+          # Process each PR
+          echo "$FILTERED_PRS" | jq -r '.[] | "\(.number) \(.branch)"' | while read -r pr_number branch_name; do
+            echo "🔧 Processing PR #$pr_number (branch: $branch_name)..."
+
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "  [DRY RUN] Would perform action: $ACTION"
+              continue
+            fi
+
+            case "$ACTION" in
+              "close")
+                echo "  ⏹️ Closing PR #$pr_number..."
+                gh pr close $pr_number --comment "🤖 Automatically closed by cleanup workflow"
+                ;;
+              "delete-branch")
+                echo "  🗑️ Deleting branch: $branch_name..."
+                # Only delete if it's a migration branch pattern
+                if [[ "$branch_name" =~ ^nx-migrate- ]]; then
+                  git push origin --delete "$branch_name" || echo "    ⚠️ Failed to delete branch (may not exist remotely)"
+                else
+                  echo "    ⚠️ Skipping branch deletion - doesn't match nx-migrate pattern"
+                fi
+                ;;
+              "close-and-delete")
+                echo "  ⏹️ Closing PR #$pr_number..."
+                gh pr close $pr_number --comment "🤖 Automatically closed by cleanup workflow"
+                echo "  🗑️ Deleting branch: $branch_name..."
+                if [[ "$branch_name" =~ ^nx-migrate- ]]; then
+                  git push origin --delete "$branch_name" || echo "    ⚠️ Failed to delete branch (may not exist remotely)"
+                else
+                  echo "    ⚠️ Skipping branch deletion - doesn't match nx-migrate pattern"
+                fi
+                ;;
+            esac
+
+            echo "  ✅ Completed processing PR #$pr_number"
+            echo ""
+          done
+
+          echo "🎉 Cleanup completed!"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "=== Cleanup Summary ==="
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Action performed: $ACTION"
+          echo "Dry run: $DRY_RUN"
+
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo ""
+            echo "💡 This was a dry run. To actually perform the cleanup:"
+            echo "   1. Re-run with dry-run set to false"
+            echo "   2. Or wait for the scheduled run (if age criteria are met)"
+          fi
