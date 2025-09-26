@@ -23,6 +23,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Release
+        id: create_release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -58,6 +59,25 @@ jobs:
 
           draft: false
           prerelease: false
+          make_latest: true
+
+      - name: Marketplace Publication Instructions
+        run: |
+          echo "🏪 GitHub Marketplace Publication"
+          echo "=================================="
+          echo ""
+          echo "✅ Release v${{ steps.version.outputs.version }} created successfully!"
+          echo ""
+          echo "📋 To publish to GitHub Marketplace:"
+          echo "1. Go to: https://github.com/${{ github.repository }}/releases"
+          echo "2. Click 'Edit' on release v${{ steps.version.outputs.version }}"
+          echo "3. Check ☑️ 'Publish this Action to the GitHub Marketplace'"
+          echo "4. Select category: 'Continuous Integration'"
+          echo "5. Click 'Update release'"
+          echo ""
+          echo "🎯 Or create issue to automate this step"
+          echo ""
+          echo "🔗 Direct link: https://github.com/${{ github.repository }}/releases/edit/v${{ steps.version.outputs.version }}"
 
   update-major-tag:
     name: Update Major Version Tag

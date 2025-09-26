@@ -1,0 +1,84 @@
+name: Publish to Marketplace
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to publish (e.g., v0.3.0)'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    name: Publish to GitHub Marketplace
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Attempt Marketplace Publication
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          echo "🚀 Attempting to publish $RELEASE_TAG to GitHub Marketplace..."
+
+          # Get release information
+          RELEASE_INFO=$(gh api repos/${{ github.repository }}/releases/tags/$RELEASE_TAG)
+          RELEASE_ID=$(echo "$RELEASE_INFO" | jq -r '.id')
+
+          echo "📋 Release ID: $RELEASE_ID"
+          echo "📋 Release Tag: $RELEASE_TAG"
+
+          # Check if already published to marketplace
+          IS_MARKETPLACE=$(echo "$RELEASE_INFO" | jq -r '.draft // false')
+
+          if [[ "$IS_MARKETPLACE" == "false" ]]; then
+            echo "✅ Release is already published and not a draft"
+
+            # Try to get marketplace info (this might not work)
+            echo "🔍 Checking marketplace status..."
+            gh api repos/${{ github.repository }}/releases/$RELEASE_ID || echo "Could not check marketplace status"
+
+            echo ""
+            echo "📋 Manual steps still required:"
+            echo "1. Go to: https://github.com/${{ github.repository }}/releases"
+            echo "2. Click 'Edit' on release $RELEASE_TAG"
+            echo "3. Check ☑️ 'Publish this Action to the GitHub Marketplace'"
+            echo "4. Select category: 'Continuous Integration'"
+            echo "5. Add description: 'Automatically migrate Nx workspaces with validation and smart PR creation'"
+            echo "6. Click 'Update release'"
+            echo ""
+            echo "🔗 Direct edit link: https://github.com/${{ github.repository }}/releases/edit/$RELEASE_TAG"
+          else
+            echo "⚠️ Release is still a draft, cannot publish to marketplace"
+          fi
+
+      - name: Create Marketplace Issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create an issue as a reminder if automation doesn't work
+          gh issue create \
+            --title "📦 Publish v${{ github.event.inputs.release_tag }} to GitHub Marketplace" \
+            --body "## 🏪 Marketplace Publication Required
+
+          Release **v${{ github.event.inputs.release_tag }}** is ready for GitHub Marketplace publication.
+
+          ### 📋 Steps:
+          1. Go to [Releases](https://github.com/${{ github.repository }}/releases)
+          2. Click 'Edit' on release v${{ github.event.inputs.release_tag }}
+          3. Check ☑️ 'Publish this Action to the GitHub Marketplace'
+          4. Select category: **Continuous Integration**
+          5. Add description: \`Automatically migrate Nx workspaces with validation and smart PR creation\`
+          6. Click 'Update release'
+
+          ### 🔗 Direct Link:
+          [Edit Release v${{ github.event.inputs.release_tag }}](https://github.com/${{ github.repository }}/releases/edit/v${{ github.event.inputs.release_tag }})
+
+          ---
+          *This issue was created automatically by the marketplace publication workflow.*" \
+            --label "marketplace,release" || echo "Issue might already exist"
