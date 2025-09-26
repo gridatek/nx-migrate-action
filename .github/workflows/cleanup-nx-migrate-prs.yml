@@ -6,7 +6,7 @@ on:
       action:
         description: 'Action to perform'
         required: true
-        default: 'close'
+        default: 'close-and-delete'
         type: choice
         options:
           - close
@@ -20,7 +20,7 @@ on:
       dry-run:
         description: 'Dry run - only show what would be done'
         required: false
-        default: true
+        default: false
         type: boolean
 
   schedule:
