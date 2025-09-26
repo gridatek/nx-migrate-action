@@ -72,6 +72,11 @@ inputs:
     required: false
     default: '.'
 
+  push-migrations-json:
+    description: 'Push migrations.json to repository after successful migration'
+    required: false
+    default: 'false'
+
   nx-version-tag:
     description: 'Version tag to use when fetching updates (e.g., latest, beta, canary, next - see npm dist-tags)'
     required: false
@@ -261,18 +266,24 @@ runs:
           echo "No changes to commit"
         fi
 
-    - name: Remove migrations.json
+    - name: Handle migrations.json after success
       if: steps.check-migrations.outputs.has-migrations == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
         if [[ -f migrations.json ]]; then
-          echo "🧹 Cleaning up migrations.json after successful migration"
-          git rm -f migrations.json
-          git commit -m "${{ inputs.commit-message-prefix }}: clean up migrations.json after running migrations"
-          echo "✅ migrations.json removed and committed"
+          if [[ "${{ inputs.push-migrations-json }}" == "yes" ]]; then
+            echo "📝 Pushing migrations.json to repository for audit trail"
+            git add migrations.json
+            git commit -m "${{ inputs.commit-message-prefix }}: add migrations.json for audit trail"
+            echo "✅ migrations.json committed to repository"
+          else
+            echo "🧹 Removing migrations.json after successful migration"
+            rm -f migrations.json
+            echo "✅ migrations.json cleaned up locally"
+          fi
         else
-          echo "ℹ️ No migrations.json to clean up"
+          echo "ℹ️ No migrations.json to handle"
         fi
 
     - name: Run validation

@@ -87,6 +87,7 @@ jobs:
 | `skip-validation` | Skip validation and always create PR         | `false` | No |
 | `target-branch` | Target branch for changes                    | `main` | No |
 | `working-directory` | Working directory                            | `.` | No |
+| `push-migrations-json` | Push migrations.json to repository after successful migration | `false` | No |
 
 ## Outputs
 
