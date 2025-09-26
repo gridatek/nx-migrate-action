@@ -25,6 +25,11 @@ jobs:
         with:
           version: 8
 
+      - name: Create empty pnpm-lock.yaml for setup
+        run: |
+          # Create empty pnpm-lock.yaml to satisfy cache requirements
+          touch pnpm-lock.yaml
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
