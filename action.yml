@@ -317,6 +317,14 @@ runs:
       run: |
         LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
         BRANCH="nx-migrate-${LATEST_VERSION}-${{ github.run_id }}-${{ github.run_attempt }}"
+
+        echo "=== PR Creation Debug Info ==="
+        echo "Latest version: ${LATEST_VERSION}"
+        echo "Run ID: ${{ github.run_id }}"
+        echo "Run attempt: ${{ github.run_attempt }}"
+        echo "Branch name: ${BRANCH}"
+        echo "Working directory: $(pwd)"
+        echo "Git status: $(git status --short)"
         
         # Determine PR reason
         if [[ "${{ inputs.auto-merge-on-success }}" == "false" ]]; then
@@ -360,10 +368,13 @@ runs:
         *This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
 
         # Create PR
-        echo "Creating PR with title: ${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}"
+        echo "=== Creating PR ==="
+        echo "Title: ${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}"
         echo "Base branch: ${{ inputs.target-branch }}"
         echo "Head branch: ${BRANCH}"
         echo "Labels: ${LABELS}"
+        echo "GitHub token present: $([[ -n "$GITHUB_TOKEN" ]] && echo 'Yes' || echo 'No')"
+        echo "PR body length: ${#PR_BODY} characters"
 
         PR_URL=$(gh pr create \
           --title "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
@@ -372,17 +383,33 @@ runs:
           --base ${{ inputs.target-branch }} \
           --head ${BRANCH} 2>&1)
 
-        if [[ $? -eq 0 && -n "$PR_URL" ]]; then
+        PR_EXIT_CODE=$?
+        echo "PR creation exit code: ${PR_EXIT_CODE}"
+        echo "PR creation output: ${PR_URL}"
+
+        if [[ $PR_EXIT_CODE -eq 0 && -n "$PR_URL" ]]; then
           echo "pr-url=$PR_URL" >> $GITHUB_OUTPUT
-          echo "✅ PR created: $PR_URL"
+          echo "✅ PR created successfully: $PR_URL"
         else
-          echo "PR creation failed with output: $PR_URL"
+          echo "❌ PR creation failed"
+          echo "Exit code: ${PR_EXIT_CODE}"
+          echo "Output: ${PR_URL}"
+
           # Try to get existing PR URL
+          echo "Checking for existing PR..."
           EXISTING_PR=$(gh pr view ${BRANCH} --json url --jq '.url' 2>/dev/null || echo "")
           if [[ -n "$EXISTING_PR" ]]; then
             echo "pr-url=$EXISTING_PR" >> $GITHUB_OUTPUT
             echo "ℹ️ PR already exists: $EXISTING_PR"
           else
-            echo "❌ Failed to create or find PR"
+            echo "No existing PR found"
+            # Additional debugging
+            echo "=== Debugging Info ==="
+            echo "Current branch: $(git branch --show-current)"
+            echo "Remote branches: $(git branch -r | head -5)"
+            echo "GitHub CLI auth status:"
+            gh auth status || echo "GitHub CLI auth failed"
+            echo "Repository info:"
+            gh repo view --json name,owner,defaultBranch || echo "Failed to get repo info"
           fi
         fi
