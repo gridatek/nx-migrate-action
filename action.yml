@@ -332,6 +332,7 @@ runs:
           inputs.merge-strategy == 'always-pr' ||
           (inputs.merge-strategy == 'auto-merge' && steps.validation.outputs.result != 'success')
         )
+      continue-on-error: true
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
@@ -427,12 +428,13 @@ runs:
           echo "Exit code: ${PR_EXIT_CODE}"
           echo "Output: ${PR_URL}"
 
-          # Try to get existing PR URL
+          # Try to get existing PR URL as fallback
           echo "Checking for existing PR..."
           EXISTING_PR=$(gh pr view ${BRANCH} --json url --jq '.url' 2>/dev/null || echo "")
           if [[ -n "$EXISTING_PR" ]]; then
             echo "pr-url=$EXISTING_PR" >> $GITHUB_OUTPUT
             echo "ℹ️ PR already exists: $EXISTING_PR"
+            echo "✅ Using existing PR instead of creating new one"
           else
             echo "No existing PR found"
             # Additional debugging
@@ -443,5 +445,9 @@ runs:
             gh auth status || echo "GitHub CLI auth failed"
             echo "Repository info:"
             gh repo view --json name,owner,defaultBranch || echo "Failed to get repo info"
+
+            # Exit with error if we can't create or find a PR
+            echo "❌ Failed to create PR and no existing PR found"
+            exit 1
           fi
         fi
