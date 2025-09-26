@@ -137,7 +137,6 @@ ehthumbs.db
 Thumbs.db
 
 # Test files and directories
-test-workspace/
 test-projects/
 temp/
 tmp/
