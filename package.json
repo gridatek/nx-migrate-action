@@ -14,7 +14,8 @@
     "automation",
     "monorepo",
     "ci-cd",
-    "dependency-update"
+    "dependency-update",
+    "nx-workspace"
   ],
   "author": "Khalil LAGRIDA <khalil.lagrida@gmail.com>",
   "license": "MIT",
@@ -22,10 +23,7 @@
     "url": "https://github.com/gridatek/nx-migrate-action/issues"
   },
   "homepage": "https://github.com/gridatek/nx-migrate-action#readme",
-  "scripts": {
-    "test": "echo \"No tests specified\" && exit 0",
-    "lint": "echo \"No linting specified\" && exit 0"
-  },
-  "devDependencies": {},
-  "dependencies": {}
+  "engines": {
+    "node": ">=18"
+  }
 }
