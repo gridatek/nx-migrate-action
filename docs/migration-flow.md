@@ -76,6 +76,53 @@ flowchart TD
     style Z fill:#f3e5f5
 ```
 
+## 📋 Detailed Step Descriptions
+
+### Setup Phase
+- **🚀 Start**: Action begins execution
+- **⚙️ Setup Node.js**: Configure Node.js version and package manager cache
+- **📦 Install deps**: Install project dependencies using configured package manager
+
+### Version Check Phase
+- **🔍 Check version**: Compare current Nx package version with latest/specified tag
+- **Update needed?**: Determine if an update is available
+
+### Migration Phase (if update needed)
+- **📈 nx migrate**: Run `nx migrate [version-tag]` to update package.json and generate migrations
+- **🔧 Install deps**: Install updated dependencies after package.json changes
+- **migrations.json?**: Check if migration file was created by Nx
+
+### Migration Execution (if migrations.json exists)
+- **📋 Show migrations**: Display migration details found in migrations.json
+- **🔧 Run migrations**: Execute `nx migrate --run-migrations` to apply code changes
+- **Success?**: Verify migrations completed without errors
+
+### Git Operations
+- **📝 Commit updates/changes**: Commit package.json updates or all migration changes
+- **⚙️ Setup Git**: Configure git user for automated commits
+- **push-migrations-json?**: Check configuration for migration file handling
+- **📝 Add file / 💾 Commit audit**: Keep migrations.json in repository for audit trail
+- **🧹 Remove file / 🗑️ Clean up**: Remove migrations.json locally after successful migration
+
+### Validation Phase
+- **skip-validation?**: Check if validation should be bypassed
+- **🔍 Run tests**: Execute configured validation commands
+- **🎯 nx run-many**: Run `nx run-many --target=build,test --affected/all`
+- **Pass?**: Verify all validation commands succeeded
+
+### Branching Strategy
+- **auto-merge?**: Check if automatic merging is enabled
+- **create-pr?**: Check if PR should be created on validation failure
+- **🚀 Push direct**: Push changes directly to target branch
+- **📝 Create PR**: Create pull request with detailed information
+
+### Completion
+- **✅ Complete**: Action finished - no changes needed
+- **✅ Auto-merged**: Changes pushed directly to target branch
+- **✅ PR Created**: Pull request created for review
+- **✅ No PR**: Validation failed but no PR creation requested
+- **💥 Exit**: Action failed due to migration errors
+
 ## 🎯 Key Decision Points
 
 ### 1. **Update Check**
