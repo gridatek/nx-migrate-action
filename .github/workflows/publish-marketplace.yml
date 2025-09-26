@@ -63,21 +63,21 @@ jobs:
         run: |
           # Create an issue as a reminder if automation doesn't work
           gh issue create \
-            --title "📦 Publish v${{ github.event.inputs.release_tag }} to GitHub Marketplace" \
+            --title "📦 Publish ${{ github.event.inputs.release_tag }} to GitHub Marketplace" \
             --body "## 🏪 Marketplace Publication Required
 
-          Release **v${{ github.event.inputs.release_tag }}** is ready for GitHub Marketplace publication.
+          Release **${{ github.event.inputs.release_tag }}** is ready for GitHub Marketplace publication.
 
           ### 📋 Steps:
           1. Go to [Releases](https://github.com/${{ github.repository }}/releases)
-          2. Click 'Edit' on release v${{ github.event.inputs.release_tag }}
+          2. Click 'Edit' on release ${{ github.event.inputs.release_tag }}
           3. Check ☑️ 'Publish this Action to the GitHub Marketplace'
           4. Select category: **Continuous Integration**
           5. Add description: \`Automatically migrate Nx workspaces with validation and smart PR creation\`
           6. Click 'Update release'
 
           ### 🔗 Direct Link:
-          [Edit Release v${{ github.event.inputs.release_tag }}](https://github.com/${{ github.repository }}/releases/edit/v${{ github.event.inputs.release_tag }})
+          [Edit Release ${{ github.event.inputs.release_tag }}](https://github.com/${{ github.repository }}/releases/edit/${{ github.event.inputs.release_tag }})
 
           ---
           *This issue was created automatically by the marketplace publication workflow.*" \
