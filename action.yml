@@ -73,7 +73,7 @@ inputs:
     default: '.'
 
   version-tag:
-    description: 'Version tag to use when fetching updates (latest, canary, next)'
+    description: 'Version tag to use when fetching updates (e.g., latest, beta, canary, next - see npm dist-tags)'
     required: false
     default: 'latest'
 
@@ -138,6 +138,10 @@ runs:
       run: |
         echo "Using version-tag: ${{ inputs.version-tag }}"
         echo "Package to check: ${{ inputs.nx-package }}"
+
+        # Show available dist-tags for debugging
+        echo "Available dist-tags:"
+        npm view ${{ inputs.nx-package }} dist-tags --json
 
         case "${{ inputs.package-manager }}" in
           npm)
