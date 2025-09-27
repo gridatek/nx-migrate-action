@@ -365,17 +365,39 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
-        # Use job ID which includes matrix variables automatically
+        # Extract matrix values for branch naming
+        MATRIX_JSON='${{ toJSON(matrix) }}'
+        echo "Matrix JSON: ${MATRIX_JSON}"
+
+        # Convert matrix to clean branch-safe string
+        if [ "$MATRIX_JSON" != "null" ] && [ "$MATRIX_JSON" != "{}" ]; then
+          MATRIX_VALUES=$(echo "$MATRIX_JSON" | jq -r 'to_entries | map("\(.key)-\(.value)") | join("-")' 2>/dev/null || echo "")
+        else
+          MATRIX_VALUES=""
+        fi
+
+        # Clean matrix values for branch name (remove invalid characters)
+        CLEAN_MATRIX=$(echo "${MATRIX_VALUES}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+
+        # Use job ID as fallback
         JOB_ID="${{ github.job }}"
+        CLEAN_JOB_ID=$(echo "${JOB_ID}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+
         RUN_ID="${{ github.run_id }}"
         RUN_ATTEMPT="${{ github.run_attempt }}"
 
-        # Clean job ID for branch name (remove invalid characters)
-        CLEAN_JOB_ID=$(echo "${JOB_ID}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
-        BRANCH="nx-migrate-${LATEST_VERSION}-${CLEAN_JOB_ID}-${RUN_ID}-${RUN_ATTEMPT}"
+        # Build branch name with matrix values or job ID fallback
+        if [ -n "$CLEAN_MATRIX" ]; then
+          BRANCH="nx-migrate-${LATEST_VERSION}-${CLEAN_MATRIX}-${RUN_ID}-${RUN_ATTEMPT}"
+        else
+          BRANCH="nx-migrate-${LATEST_VERSION}-${CLEAN_JOB_ID}-${RUN_ID}-${RUN_ATTEMPT}"
+        fi
 
         echo "=== PR Creation Debug Info ==="
         echo "Latest version: ${LATEST_VERSION}"
+        echo "Matrix JSON: ${MATRIX_JSON}"
+        echo "Matrix values: ${MATRIX_VALUES}"
+        echo "Clean matrix: ${CLEAN_MATRIX}"
         echo "Raw Job ID: ${JOB_ID}"
         echo "Clean Job ID: ${CLEAN_JOB_ID}"
         echo "Run ID: ${RUN_ID}"
@@ -422,8 +444,12 @@ runs:
         # Convert labels to space-separated format for gh cli
         LABELS=$(echo "${{ inputs.pr-labels }}" | tr ',' ' ')
         
-        # Create PR title and body - use job ID for generic matrix identification
-        PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION} (${JOB_ID})"
+        # Create PR title and body - use matrix values for identification
+        if [ -n "$CLEAN_MATRIX" ]; then
+          PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION} (${CLEAN_MATRIX})"
+        else
+          PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION} (${CLEAN_JOB_ID})"
+        fi
 
         PR_BODY="## 🚀 Nx Migration Update
 
@@ -436,8 +462,8 @@ runs:
         - Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '❌ No' }}
         - Validation result: ${{ steps.validation.outputs.result || 'skipped' }}
 
-        ### Job Configuration:
-        - **Job ID:** ${JOB_ID}
+        ### Matrix Configuration:
+        - **Matrix:** ${CLEAN_MATRIX:-${CLEAN_JOB_ID}}
         - **Package Manager:** ${{ inputs.package-manager }}
         - **Node Version:** ${{ inputs.node-version }}
         - **Working Directory:** ${{ inputs.working-directory }}
