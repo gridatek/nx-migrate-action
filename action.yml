@@ -15,7 +15,7 @@ inputs:
   nx-package:
     description: 'The Nx package to check for updates'
     required: false
-    default: '@nx/workspace'
+    default: 'nx'
 
   node-version:
     description: 'Node.js version to use'

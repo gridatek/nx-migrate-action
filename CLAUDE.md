@@ -36,14 +36,17 @@ The action follows this sequence:
 
 ### Essential Inputs
 - `github-token`: Required for PR creation and pushing
-- `nx-package`: Target package to migrate (default: @nx/workspace)
+- `nx-package`: Target package to migrate (default: nx)
 - `package-manager`: npm/yarn/pnpm (default: npm)
-- `validation-commands`: Comma-separated commands to run (default: build,test)
+- `validation-commands`: Comma-separated commands to run (default: build)
+- `node-version`: Node.js version to use (default: 22)
 
 ### Behavioral Controls
-- `auto-merge-on-success`: Push directly to main if validation passes (default: true)
-- `skip-validation`: Always create PR without validation (default: false)
+- `merge-strategy`: auto-merge (push directly to main if validation passes) or always-pr (default: auto-merge)
 - `validation-scope`: Use --affected or --all (default: affected)
+- `nx-version-tag`: Version tag for updates - latest, beta, canary, next (default: latest)
+- `push-migrations-json`: Keep migrations.json for audit trail (default: false)
+- `create-missing-labels`: Auto-create PR labels if missing (default: true)
 
 ## Testing
 
@@ -56,10 +59,11 @@ The action includes comprehensive testing via `.github/workflows/test.yml`:
 
 ### Test Commands
 
-No package.json scripts are configured, but based on test workflow:
-- YAML linting: Uses external yamllint action
-- Action validation: Uses github-action-validator Docker image
-- Functional testing: Creates test workspace and runs action
+No package.json scripts are configured. Testing is done via GitHub Actions workflow:
+- **YAML linting**: `yamllint action.yml` (uses .yamllint.yml config)
+- **Action validation**: Basic structural validation of action.yml
+- **Functional testing**: Matrix testing across Node.js versions (22, 24) and package managers
+- **Local testing**: Create test workspace with older Nx version to verify migration
 
 ## Development Guidelines
 

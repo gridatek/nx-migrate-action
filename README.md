@@ -74,7 +74,7 @@ jobs:
 | Input | Description                                  | Default | Required |
 |-------|----------------------------------------------|---------|----------|
 | `github-token` | GitHub token for creating PRs and pushing    | `${{ github.token }}` | Yes |
-| `nx-package` | The Nx package to check for updates          | `@nx/workspace` | No |
+| `nx-package` | The Nx package to check for updates          | `nx` | No |
 | `nx-version-tag` | Nx version tag to use (latest, canary, next) | `latest` | No |
 | `node-version` | Node.js version to use                       | `22` | No |
 | `package-manager` | Package manager (npm, yarn, pnpm)            | `npm` | No |
@@ -158,7 +158,7 @@ steps:
   - uses: gridatek/nx-migrate-action@v0
     with:
       github-token: ${{ secrets.GITHUB_TOKEN }}
-      nx-package: '@nx/workspace'
+      nx-package: 'nx'
       
   - uses: gridatek/nx-migrate-action@v0
     with:
