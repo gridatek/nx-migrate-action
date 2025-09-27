@@ -108,6 +108,7 @@ jobs:
           working-directory: './test-workspace'
           validation-commands: 'build'
           merge-strategy: 'always-pr'  # Always create PR for testing
+          dev-mode: 'true'  # Enable dev mode for unique matrix branches
 
       - name: Verify outputs
         run: |
