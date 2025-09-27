@@ -503,7 +503,7 @@ runs:
 
         ### Changes Made:
         - Updated Nx workspace to version ${LATEST_VERSION}
-        - Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '❌ No' }}
+        - Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '➖ Nx didn'\''t create any migrations for this version update' }}
         - Validation result: ${{ steps.validation.outputs.result || 'skipped' }}
 
         ### Matrix Configuration:
