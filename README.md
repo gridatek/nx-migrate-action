@@ -75,7 +75,7 @@ jobs:
 |-------|----------------------------------------------|---------|----------|
 | `github-token` | GitHub token for creating PRs and pushing    | `${{ github.token }}` | Yes |
 | `nx-package` | The Nx package to check for updates          | `nx` | No |
-| `nx-version-tag` | Nx version tag to use (latest, canary, next) | `latest` | No |
+| `nx-version` | Nx version to use (latest, next, or specific version like 19.8.0) | `latest` | No |
 | `node-version` | Node.js version to use                       | `22` | No |
 | `package-manager` | Package manager (npm, yarn, pnpm)            | `npm` | No |
 | `validation-commands` | Validation commands (comma-separated)        | `build` | No |
