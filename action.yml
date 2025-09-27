@@ -149,21 +149,29 @@ runs:
             LATEST_VERSION=$(npm view ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version)
             ;;
           yarn)
-            CURRENT_VERSION=$(yarn list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.data.trees[0].name // empty' | sed 's/.*@//')
-            # Use yarn info to get version, filtering out yarn CLI messages
-            echo "Trying yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version"
-            YARN_OUTPUT=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version 2>/dev/null)
-            echo "Raw yarn output: '${YARN_OUTPUT}'"
-            # Extract only the version number (last line that matches version pattern)
-            LATEST_VERSION=$(echo "$YARN_OUTPUT" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | tail -1)
-            echo "Extracted version: '${LATEST_VERSION}'"
-            # If that fails, try without the version tag resolution
+            # Get current version using yarn list with pattern
+            CURRENT_VERSION=$(yarn list --pattern "${{ inputs.nx-package }}" --depth=0 2>/dev/null | grep -E "^[^@]*@[0-9]" | sed 's/.*@//' | head -1)
+
+            # Get latest version using yarn info
+            echo "Getting latest version with: yarn info ${{ inputs.nx-package }} --json"
+            YARN_INFO_JSON=$(yarn info ${{ inputs.nx-package }} --json 2>/dev/null)
+            echo "Raw yarn info output: '${YARN_INFO_JSON}'"
+
+            # Extract version from JSON using jq
+            if command -v jq >/dev/null 2>&1; then
+              LATEST_VERSION=$(echo "$YARN_INFO_JSON" | jq -r '.data.version // empty' 2>/dev/null)
+            else
+              # Fallback without jq - extract version from JSON manually
+              LATEST_VERSION=$(echo "$YARN_INFO_JSON" | grep -o '"version":"[^"]*"' | sed 's/"version":"\([^"]*\)"/\1/' | head -1)
+            fi
+
+            echo "Extracted latest version: '${LATEST_VERSION}'"
+
+            # If still empty, try simpler approach
             if [[ -z "$LATEST_VERSION" ]]; then
-              echo "Fallback: trying yarn info without tag resolution"
-              YARN_OUTPUT=$(yarn info ${{ inputs.nx-package }} version 2>/dev/null)
-              echo "Fallback raw output: '${YARN_OUTPUT}'"
-              LATEST_VERSION=$(echo "$YARN_OUTPUT" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | tail -1)
-              echo "Fallback extracted: '${LATEST_VERSION}'"
+              echo "Fallback: trying yarn info ${{ inputs.nx-package }} version"
+              LATEST_VERSION=$(yarn info ${{ inputs.nx-package }} version 2>/dev/null | tail -1 | grep -E '^[0-9]+\.[0-9]+\.[0-9]+')
+              echo "Fallback version: '${LATEST_VERSION}'"
             fi
             ;;
           pnpm)
