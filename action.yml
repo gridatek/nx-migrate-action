@@ -150,15 +150,20 @@ runs:
             ;;
           yarn)
             CURRENT_VERSION=$(yarn list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.data.trees[0].name // empty' | sed 's/.*@//')
-            # Try yarn info command, with better error handling
+            # Use yarn info to get version, filtering out yarn CLI messages
             echo "Trying yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version"
-            LATEST_VERSION=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version 2>/dev/null | grep -E '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-            echo "Yarn returned: '${LATEST_VERSION}'"
+            YARN_OUTPUT=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version 2>/dev/null)
+            echo "Raw yarn output: '${YARN_OUTPUT}'"
+            # Extract only the version number (last line that matches version pattern)
+            LATEST_VERSION=$(echo "$YARN_OUTPUT" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | tail -1)
+            echo "Extracted version: '${LATEST_VERSION}'"
             # If that fails, try without the version tag resolution
             if [[ -z "$LATEST_VERSION" ]]; then
               echo "Fallback: trying yarn info without tag resolution"
-              LATEST_VERSION=$(yarn info ${{ inputs.nx-package }} version 2>/dev/null | grep -E '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-              echo "Fallback returned: '${LATEST_VERSION}'"
+              YARN_OUTPUT=$(yarn info ${{ inputs.nx-package }} version 2>/dev/null)
+              echo "Fallback raw output: '${YARN_OUTPUT}'"
+              LATEST_VERSION=$(echo "$YARN_OUTPUT" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | tail -1)
+              echo "Fallback extracted: '${LATEST_VERSION}'"
             fi
             ;;
           pnpm)
@@ -166,6 +171,13 @@ runs:
             LATEST_VERSION=$(pnpm view ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version)
             ;;
         esac
+
+        # Validate that LATEST_VERSION is a proper version number
+        if [[ ! "$LATEST_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+          echo "⚠️ Warning: Invalid version detected: '$LATEST_VERSION'"
+          echo "Setting LATEST_VERSION to CURRENT_VERSION to avoid issues"
+          LATEST_VERSION="$CURRENT_VERSION"
+        fi
 
         if [[ "$CURRENT_VERSION" != "$LATEST_VERSION" && -n "$LATEST_VERSION" && -n "$CURRENT_VERSION" ]]; then
           echo "Current version: $CURRENT_VERSION"
@@ -357,11 +369,15 @@ runs:
         JOB_ID="${{ github.job }}"
         RUN_ID="${{ github.run_id }}"
         RUN_ATTEMPT="${{ github.run_attempt }}"
-        BRANCH="nx-migrate-${LATEST_VERSION}-${JOB_ID}-${RUN_ID}-${RUN_ATTEMPT}"
+
+        # Clean job ID for branch name (remove invalid characters)
+        CLEAN_JOB_ID=$(echo "${JOB_ID}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+        BRANCH="nx-migrate-${LATEST_VERSION}-${CLEAN_JOB_ID}-${RUN_ID}-${RUN_ATTEMPT}"
 
         echo "=== PR Creation Debug Info ==="
         echo "Latest version: ${LATEST_VERSION}"
-        echo "Job ID: ${JOB_ID}"
+        echo "Raw Job ID: ${JOB_ID}"
+        echo "Clean Job ID: ${CLEAN_JOB_ID}"
         echo "Run ID: ${RUN_ID}"
         echo "Run attempt: ${RUN_ATTEMPT}"
         echo "Branch name: ${BRANCH}"
@@ -378,15 +394,30 @@ runs:
         fi
         
         echo "Creating PR with branch: ${BRANCH}"
+
+        # Check if branch already exists locally or remotely
+        if git show-ref --verify --quiet refs/heads/${BRANCH}; then
+          echo "Branch ${BRANCH} exists locally, deleting..."
+          git branch -D ${BRANCH} 2>/dev/null || true
+        fi
+
+        if git ls-remote --exit-code --heads origin ${BRANCH} >/dev/null 2>&1; then
+          echo "Branch ${BRANCH} exists remotely, deleting..."
+          git push origin --delete ${BRANCH} 2>/dev/null || true
+        fi
+
+        echo "Creating new branch: ${BRANCH}"
         git checkout -b ${BRANCH}
 
-        # Try to push branch, handle conflicts gracefully
+        echo "Pushing branch to origin..."
         if ! git push --set-upstream origin ${BRANCH}; then
-          echo "Failed to push branch ${BRANCH}, trying with force..."
-          # Try to delete and recreate if branch exists
-          git push origin --delete ${BRANCH} 2>/dev/null || true
-          git push --set-upstream origin ${BRANCH}
+          echo "❌ Failed to push branch ${BRANCH}"
+          echo "Git status: $(git status --porcelain)"
+          echo "Git remote: $(git remote -v)"
+          echo "Git branch: $(git branch -a)"
+          exit 1
         fi
+        echo "✅ Branch pushed successfully"
         
         # Convert labels to space-separated format for gh cli
         LABELS=$(echo "${{ inputs.pr-labels }}" | tr ',' ' ')
