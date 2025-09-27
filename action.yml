@@ -150,8 +150,16 @@ runs:
             ;;
           yarn)
             CURRENT_VERSION=$(yarn list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.data.trees[0].name // empty' | sed 's/.*@//')
-            # Use simple yarn info command without JSON parsing
-            LATEST_VERSION=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+            # Try yarn info command, with better error handling
+            echo "Trying yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version"
+            LATEST_VERSION=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version 2>/dev/null | grep -E '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+            echo "Yarn returned: '${LATEST_VERSION}'"
+            # If that fails, try without the version tag resolution
+            if [[ -z "$LATEST_VERSION" ]]; then
+              echo "Fallback: trying yarn info without tag resolution"
+              LATEST_VERSION=$(yarn info ${{ inputs.nx-package }} version 2>/dev/null | grep -E '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+              echo "Fallback returned: '${LATEST_VERSION}'"
+            fi
             ;;
           pnpm)
             CURRENT_VERSION=$(pnpm list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.[0].dependencies["${{ inputs.nx-package }}"].version // empty')
@@ -347,12 +355,15 @@ runs:
         LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
         # Use job ID which includes matrix variables automatically
         JOB_ID="${{ github.job }}"
-        BRANCH="nx-migrate-${LATEST_VERSION}-${JOB_ID}-${{ github.run_id }}-${{ github.run_attempt }}"
+        RUN_ID="${{ github.run_id }}"
+        RUN_ATTEMPT="${{ github.run_attempt }}"
+        BRANCH="nx-migrate-${LATEST_VERSION}-${JOB_ID}-${RUN_ID}-${RUN_ATTEMPT}"
 
         echo "=== PR Creation Debug Info ==="
         echo "Latest version: ${LATEST_VERSION}"
-        echo "Run ID: ${{ github.run_id }}"
-        echo "Run attempt: ${{ github.run_attempt }}"
+        echo "Job ID: ${JOB_ID}"
+        echo "Run ID: ${RUN_ID}"
+        echo "Run attempt: ${RUN_ATTEMPT}"
         echo "Branch name: ${BRANCH}"
         echo "Working directory: $(pwd)"
         echo "Git status: $(git status --short)"
