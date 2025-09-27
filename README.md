@@ -81,7 +81,7 @@ jobs:
 | `validation-commands` | Validation commands (comma-separated)        | `build` | No |
 | `validation-scope` | Validation scope (all, affected)             | `affected` | No |
 | `merge-strategy` | Merge strategy after validation (auto-merge, always-pr) | `auto-merge` | No |
-| `pr-labels` | PR labels (comma-separated)                  | `dependencies,nx-migration,automated` | No |
+| `pr-labels` | PR labels (comma-separated)                  | `nx-migrate-action` | No |
 | `commit-message-prefix` | Commit message prefix                        | `build` | No |
 | `target-branch` | Target branch for changes                    | `main` | No |
 | `working-directory` | Working directory                            | `.` | No |
@@ -261,6 +261,12 @@ Enable verbose logging:
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+## Recent Updates
+
+### Version Detection Improvements
+- **Fixed yarn version detection**: Now correctly displays actual version numbers instead of version tags (e.g., "21.2.2 → 21.5.3" instead of "21.2.2 → latest")
+- **Updated default PR labels**: Simplified to use `nx-migrate-action` for better action identification
 
 ## Changelog
 

@@ -45,7 +45,7 @@ inputs:
   pr-labels:
     description: 'Labels to add to PRs (comma-separated)'
     required: false
-    default: 'dependencies,nx-migration,automated'
+    default: 'nx-migrate-action'
 
   commit-message-prefix:
     description: 'Prefix for commit messages'
