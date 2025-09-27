@@ -77,6 +77,11 @@ inputs:
     required: false
     default: 'true'
 
+  dev-mode:
+    description: 'Enable dev mode for testing (creates unique branches with matrix info)'
+    required: false
+    default: 'false'
+
 outputs:
   updated:
     description: 'Whether Nx was updated'
@@ -373,43 +378,68 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
-        # Extract matrix values for branch naming
-        MATRIX_JSON='${{ toJSON(matrix) }}'
-        echo "Matrix JSON: ${MATRIX_JSON}"
+        DEV_MODE="${{ inputs.dev-mode }}"
 
-        # Convert matrix to clean branch-safe string
-        if [ "$MATRIX_JSON" != "null" ] && [ "$MATRIX_JSON" != "{}" ]; then
-          MATRIX_VALUES=$(echo "$MATRIX_JSON" | jq -r 'to_entries | map("\(.key)-\(.value)") | join("-")' 2>/dev/null || echo "")
+        echo "Dev mode: ${DEV_MODE}"
+
+        if [ "$DEV_MODE" = "true" ]; then
+          echo "=== DEV MODE: Creating unique branch with matrix info ==="
+          # Extract matrix values for branch naming
+          MATRIX_JSON='${{ toJSON(matrix) }}'
+          echo "Matrix JSON: ${MATRIX_JSON}"
+
+          # Convert matrix to clean branch-safe string
+          if [ "$MATRIX_JSON" != "null" ] && [ "$MATRIX_JSON" != "{}" ]; then
+            MATRIX_VALUES=$(echo "$MATRIX_JSON" | jq -r 'to_entries | map("\(.key)-\(.value)") | join("-")' 2>/dev/null || echo "")
+          else
+            MATRIX_VALUES=""
+          fi
+
+          # Clean matrix values for branch name (remove invalid characters)
+          CLEAN_MATRIX=$(echo "${MATRIX_VALUES}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+
+          # Use job ID as fallback
+          JOB_ID="${{ github.job }}"
+          CLEAN_JOB_ID=$(echo "${JOB_ID}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+
+          RUN_ID="${{ github.run_id }}"
+          RUN_ATTEMPT="${{ github.run_attempt }}"
+
+          # Build branch name with matrix values or job ID fallback
+          if [ -n "$CLEAN_MATRIX" ]; then
+            BRANCH="nx-migrate-${LATEST_VERSION}-${CLEAN_MATRIX}-${RUN_ID}-${RUN_ATTEMPT}"
+          else
+            BRANCH="nx-migrate-${LATEST_VERSION}-${CLEAN_JOB_ID}-${RUN_ID}-${RUN_ATTEMPT}"
+          fi
         else
-          MATRIX_VALUES=""
-        fi
+          echo "=== PROD MODE: Using simple branch naming ==="
+          BRANCH="nx-migrate-${LATEST_VERSION}"
 
-        # Clean matrix values for branch name (remove invalid characters)
-        CLEAN_MATRIX=$(echo "${MATRIX_VALUES}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
-
-        # Use job ID as fallback
-        JOB_ID="${{ github.job }}"
-        CLEAN_JOB_ID=$(echo "${JOB_ID}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
-
-        RUN_ID="${{ github.run_id }}"
-        RUN_ATTEMPT="${{ github.run_attempt }}"
-
-        # Build branch name with matrix values or job ID fallback
-        if [ -n "$CLEAN_MATRIX" ]; then
-          BRANCH="nx-migrate-${LATEST_VERSION}-${CLEAN_MATRIX}-${RUN_ID}-${RUN_ATTEMPT}"
-        else
-          BRANCH="nx-migrate-${LATEST_VERSION}-${CLEAN_JOB_ID}-${RUN_ID}-${RUN_ATTEMPT}"
+          # Check if branch already exists remotely
+          echo "Checking if branch ${BRANCH} already exists..."
+          if git ls-remote --exit-code --heads origin ${BRANCH} >/dev/null 2>&1; then
+            echo "✅ Branch ${BRANCH} already exists. Skipping migration as it's likely already handled."
+            echo "updated=false" >> $GITHUB_OUTPUT
+            echo "current-version=${{ steps.check-update.outputs.current-version }}" >> $GITHUB_OUTPUT
+            echo "latest-version=${LATEST_VERSION}" >> $GITHUB_OUTPUT
+            echo "skip-reason=branch-exists" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "Branch ${BRANCH} does not exist, proceeding with migration."
         fi
 
         echo "=== PR Creation Debug Info ==="
+        echo "Dev mode: ${DEV_MODE}"
         echo "Latest version: ${LATEST_VERSION}"
-        echo "Matrix JSON: ${MATRIX_JSON}"
-        echo "Matrix values: ${MATRIX_VALUES}"
-        echo "Clean matrix: ${CLEAN_MATRIX}"
-        echo "Raw Job ID: ${JOB_ID}"
-        echo "Clean Job ID: ${CLEAN_JOB_ID}"
-        echo "Run ID: ${RUN_ID}"
-        echo "Run attempt: ${RUN_ATTEMPT}"
+        if [ "$DEV_MODE" = "true" ]; then
+          echo "Matrix JSON: ${MATRIX_JSON}"
+          echo "Matrix values: ${MATRIX_VALUES}"
+          echo "Clean matrix: ${CLEAN_MATRIX}"
+          echo "Raw Job ID: ${JOB_ID}"
+          echo "Clean Job ID: ${CLEAN_JOB_ID}"
+          echo "Run ID: ${RUN_ID}"
+          echo "Run attempt: ${RUN_ATTEMPT}"
+        fi
         echo "Branch name: ${BRANCH}"
         echo "Working directory: $(pwd)"
         echo "Git status: $(git status --short)"
@@ -452,11 +482,17 @@ runs:
         # Convert labels to space-separated format for gh cli
         LABELS=$(echo "${{ inputs.pr-labels }}" | tr ',' ' ')
         
-        # Create PR title and body - use matrix values for identification
-        if [ -n "$CLEAN_MATRIX" ]; then
-          PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION} (${CLEAN_MATRIX})"
+        # Create PR title and body - handle dev/prod mode
+        if [ "$DEV_MODE" = "true" ]; then
+          # Dev mode: include matrix info for identification
+          if [ -n "$CLEAN_MATRIX" ]; then
+            PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION} (${CLEAN_MATRIX})"
+          else
+            PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION} (${CLEAN_JOB_ID})"
+          fi
         else
-          PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION} (${CLEAN_JOB_ID})"
+          # Prod mode: simple title
+          PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}"
         fi
 
         PR_BODY="## 🚀 Nx Migration Update

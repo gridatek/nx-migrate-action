@@ -53,7 +53,7 @@ jobs:
           echo "2. Click 'Edit' on release $RELEASE_TAG"
           echo "3. Check ☑️ 'Publish this Action to the GitHub Marketplace'"
           echo "4. Select category: 'Dependency management'"
-          echo "5. Add description: 'Automatically migrate Nx workspaces with validation and smart PR creation'"
+          echo "5. Add description: 'Automatically migrate Nx workspaces with dev/prod modes, matrix testing, and smart PR creation'"
           echo "6. Click 'Update release'"
           echo ""
           echo "🔗 Direct edit link: https://github.com/${{ github.repository }}/releases/edit/$RELEASE_TAG"

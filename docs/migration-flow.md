@@ -14,7 +14,14 @@ flowchart TD
     E -->|No| F[ℹ️ Up to date]
     F --> G[✅ Complete]
 
-    E -->|Yes| H[📈 nx migrate]
+    E -->|Yes| H1{🎯 Dev Mode?}
+    H1 -->|Yes| H2[🔀 Create unique branch<br/>with matrix info]
+    H1 -->|No| H3[🔍 Check if simple<br/>branch exists]
+    H3 -->|Exists| H4[⏭️ Skip: already handled]
+    H4 --> G
+    H3 -->|Not exists| H5[🔀 Create simple branch]
+    H2 --> H[📈 nx migrate]
+    H5 --> H
     H --> I[🔧 Install deps]
     I --> J{migrations.json?}
 
@@ -76,7 +83,14 @@ flowchart TD
 - **🔍 Check version**: Compare current Nx package version with latest/specified tag
 - **Update needed?**: Determine if an update is available
 
-### Migration Phase (if update needed)
+### Branch Strategy Phase (if update needed)
+- **🎯 Dev Mode?**: Check if action is running in development mode
+- **🔀 Create unique branch with matrix info**: Dev mode creates branches like `nx-migrate-21.5.3-yarn-node24-123-1`
+- **🔍 Check if simple branch exists**: Prod mode checks for existing branch `nx-migrate-21.5.3`
+- **⏭️ Skip: already handled**: Exit early if branch exists to prevent duplicate work
+- **🔀 Create simple branch**: Prod mode creates clean branch name
+
+### Migration Phase
 - **📈 nx migrate**: Run `nx migrate [version-tag]` to update package.json and generate migrations
 - **🔧 Install deps**: Install updated dependencies after package.json changes
 - **migrations.json?**: Check if migration file was created by Nx
@@ -168,10 +182,22 @@ Start → Setup → Install → Version Check → Migrate → Commit migrations.
 Start → Setup → Install → Version Check → Migrate → Migration fails ❌ → Action fails
 ```
 
+### Scenario G: Dev Mode Matrix Testing
+```
+Start → Setup → Install → Version Check → Dev Mode → Create unique branch (matrix-info) → Migrate → Validate → Create PR
+```
+
+### Scenario H: Prod Mode Duplicate Prevention
+```
+Start → Setup → Install → Version Check → Prod Mode → Branch exists → Skip (no duplicate work)
+```
+
 ## 🔧 Configuration Impact
 
 | Setting | Result |
 |---------|--------|
+| `dev-mode: true` | Creates unique branches with matrix info for testing |
+| `dev-mode: false` (default) | Creates simple branches with duplicate detection |
 | `nx-version-tag: latest` | Uses stable release version |
 | `nx-version-tag: canary/next` | Uses pre-release version |
 | `push-migrations-json: yes` | migrations.json preserved in Git history |

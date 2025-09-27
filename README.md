@@ -86,6 +86,7 @@ jobs:
 | `target-branch` | Target branch for changes                    | `main` | No |
 | `working-directory` | Working directory                            | `.` | No |
 | `push-migrations-json` | Push migrations.json to repository after successful migration | `false` | No |
+| `dev-mode` | Enable dev mode for testing (creates unique branches with matrix info) | `false` | No |
 
 ## Outputs
 
@@ -145,6 +146,88 @@ jobs:
     # Only runs build validation by default
 ```
 
+### Dev Mode vs Production Mode
+
+The action supports two modes to handle different use cases:
+
+#### Production Mode (Default)
+```yaml
+- uses: gridatek/nx-migrate-action@v0
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    # dev-mode defaults to 'false'
+```
+
+**Features:**
+- Creates simple branch names: `nx-migrate-21.5.3`
+- Checks if branch already exists and skips if found
+- Prevents duplicate migration work
+- Creates single clean PR per version
+- Ideal for real production migrations
+
+#### Dev Mode (Testing)
+```yaml
+- uses: gridatek/nx-migrate-action@v0
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    dev-mode: 'true'
+```
+
+**Features:**
+- Creates unique branches with matrix info: `nx-migrate-21.5.3-package-manager-yarn-node-version-24-18059576033-1`
+- Each matrix job creates separate PRs
+- Useful for testing workflows and validating across different configurations
+- Includes matrix variables in PR titles for identification
+
+### Matrix Testing Strategy
+
+#### Testing Different Configurations
+```yaml
+name: Test Nx Migration
+on: workflow_dispatch
+
+jobs:
+  test-migration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package-manager: [npm, yarn, pnpm]
+        node-version: [22, 24]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gridatek/nx-migrate-action@v0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          package-manager: ${{ matrix.package-manager }}
+          node-version: ${{ matrix.node-version }}
+          dev-mode: 'true'  # Creates 6 unique PRs for testing
+```
+
+#### Production Migration
+```yaml
+name: Nx Migration
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly on Mondays
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gridatek/nx-migrate-action@v0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # dev-mode: false (default) - single clean migration
+```
+
 ### Multiple Nx Packages
 
 You can run the action multiple times for different Nx packages:
@@ -154,12 +237,12 @@ steps:
   - uses: actions/checkout@v4
     with:
       fetch-depth: 0
-      
+
   - uses: gridatek/nx-migrate-action@v0
     with:
       github-token: ${{ secrets.GITHUB_TOKEN }}
       nx-package: 'nx'
-      
+
   - uses: gridatek/nx-migrate-action@v0
     with:
       github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -168,13 +251,50 @@ steps:
 
 ## How It Works
 
-1. **Check for Updates**: Compares current Nx version with latest available
-2. **Apply Updates**: Runs `nx migrate latest` if update is available
-3. **Run Migrations**: Executes any migrations found in `migrations.json`
-4. **Validate Changes**: Runs specified validation commands
-5. **Smart Branching**:
-    - ✅ **Success**: Push directly to target branch (if enabled)
-    - ❌ **Failure**: Create PR for manual review
+```mermaid
+flowchart TD
+    A[Start Action] --> B[Check for Nx Updates]
+    B --> C{Update Available?}
+    C -->|No| D[Exit: Already up to date]
+    C -->|Yes| E{Dev Mode?}
+
+    E -->|Yes| F[Create Unique Branch<br/>with Matrix Info]
+    E -->|No| G[Check if Simple Branch<br/>Already Exists]
+
+    G -->|Exists| H[Exit: Skip Duplicate Work]
+    G -->|Not Exists| I[Create Simple Branch]
+
+    F --> J[Run Nx Migration]
+    I --> J
+    J --> K[Execute Migrations]
+    K --> L[Commit Changes]
+    L --> M[Run Validation Tests]
+
+    M --> N{Validation Passed?}
+    N -->|Yes + Auto-merge| O[Push to Target Branch]
+    N -->|No or Always-PR| P[Create Pull Request]
+
+    O --> Q[End: Direct Merge]
+    P --> R[End: PR Created]
+
+    style E fill:#e1f5fe
+    style F fill:#f3e5f5
+    style G fill:#e8f5e8
+    style I fill:#e8f5e8
+```
+
+### Workflow Steps
+
+1. **Version Detection**: Compares current Nx version with latest available using package manager commands
+2. **Mode Selection**:
+   - **Dev Mode**: Creates unique branches with matrix information for testing
+   - **Prod Mode**: Uses simple branch names and checks for existing branches
+3. **Migration Process**: Runs `nx migrate latest` if update is available
+4. **Code Migrations**: Executes any migrations found in `migrations.json`
+5. **Validation**: Runs specified validation commands (build, test, lint, etc.)
+6. **Smart Deployment**:
+   - ✅ **Auto-merge**: Push directly to target branch if validation passes
+   - 🔍 **Create PR**: Generate pull request for manual review if validation fails or always-pr strategy is used
 
 ## Workflow Strategies
 
@@ -264,8 +384,19 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Recent Updates
 
+### Dev/Prod Mode Support
+- **Dev Mode**: Added `dev-mode` input for testing workflows with matrix strategies
+  - Creates unique branches with matrix info: `nx-migrate-21.5.3-package-manager-yarn-node-version-24-...`
+  - Each matrix job creates separate PRs for comprehensive testing
+  - Includes matrix variables in PR titles for easy identification
+- **Prod Mode** (default): Optimized for production use
+  - Simple branch names: `nx-migrate-21.5.3`
+  - Checks if branch already exists and skips duplicate work
+  - Single clean PR per version update
+
 ### Version Detection Improvements
 - **Fixed yarn version detection**: Now correctly displays actual version numbers instead of version tags (e.g., "21.2.2 → 21.5.3" instead of "21.2.2 → latest")
+- **Enhanced package manager support**: Improved reliability across npm, yarn, and pnpm
 - **Updated default PR labels**: Simplified to use `nx-migrate-action` for better action identification
 
 ## Changelog
