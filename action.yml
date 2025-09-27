@@ -150,7 +150,19 @@ runs:
             ;;
           yarn)
             CURRENT_VERSION=$(yarn list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.data.trees[0].name // empty' | sed 's/.*@//')
-            LATEST_VERSION=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} --json | jq -r '.data.version')
+            # Debug: show what we're trying to fetch
+            echo "Fetching yarn info for: ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }}"
+            # Get the actual version number, not the tag
+            YARN_INFO_OUTPUT=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} --json 2>/dev/null)
+            echo "Yarn info output: $YARN_INFO_OUTPUT"
+            LATEST_VERSION=$(echo "$YARN_INFO_OUTPUT" | jq -r '.data.version // empty' 2>/dev/null)
+            echo "Extracted version: $LATEST_VERSION"
+            if [[ -z "$LATEST_VERSION" || "$LATEST_VERSION" == "null" || "$LATEST_VERSION" == "empty" ]]; then
+              # Fallback: extract version from yarn info output without --json
+              echo "jq failed, trying fallback method"
+              LATEST_VERSION=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version-tag }} version 2>/dev/null | tail -1)
+              echo "Fallback version: $LATEST_VERSION"
+            fi
             ;;
           pnpm)
             CURRENT_VERSION=$(pnpm list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.[0].dependencies["${{ inputs.nx-package }}"].version // empty')
