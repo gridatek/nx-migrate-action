@@ -17,11 +17,6 @@ inputs:
     required: false
     default: 'nx'
 
-  node-version:
-    description: 'Node.js version to use'
-    required: false
-    default: '22'
-
   package-manager:
     description: 'Package manager to use (npm, yarn, pnpm)'
     required: false
@@ -110,12 +105,6 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ inputs.node-version }}
-        cache: ${{ inputs.package-manager }}
-
     - name: Install dependencies
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -509,7 +498,6 @@ runs:
         ### Matrix Configuration:
         - **Matrix:** ${CLEAN_MATRIX:-${CLEAN_JOB_ID}}
         - **Package Manager:** ${{ inputs.package-manager }}
-        - **Node Version:** ${{ inputs.node-version }}
         - **Working Directory:** ${{ inputs.working-directory }}
 
         ---
