@@ -1,7 +1,7 @@
 {
   "name": "nx-migrate-action",
   "version": "0.1.0",
-  "description": "Automatically migrate Nx workspace to the latest version and create PRs for review and validation",
+  "description": "Automatically migrate Nx workspace to the latest version and create PRs for review and validation. Optional auto-merge workflow available.",
   "main": "action.yml",
   "repository": {
     "type": "git",

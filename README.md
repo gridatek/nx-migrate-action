@@ -1,12 +1,13 @@
 # Nx Migration Action
 
-Automatically migrate your Nx workspace to the latest version and create PRs for review and validation.
+Automatically migrate your Nx workspace to the latest version and create PRs for review and validation. Optional auto-merge workflow available for seamless CI integration.
 
 ## Features
 
 - 🔄 **Automatic Updates**: Checks for and applies Nx updates automatically
 - 🛠️ **Migration Handling**: Runs Nx migrations when available
 - 🔄 **Always Creates PRs**: All migrations create PRs for proper review and CI validation
+- 🤖 **Optional Auto-merge**: Separate workflow can auto-merge PRs after CI validation passes
 - 📦 **Multi Package Manager**: Supports npm, yarn, and pnpm
 - ⚙️ **Configurable**: Customize migration process and PR settings
 - 🏷️ **Auto Labeling**: Automatically labels PRs for easy organization
@@ -296,7 +297,7 @@ jobs:
           dev-mode: 'true' # Creates 6 unique PRs for testing
 ```
 
-#### Production Migration
+#### Production Migration with Auto-merge
 
 ```yaml
 name: Nx Migration
@@ -320,8 +321,8 @@ jobs:
       - uses: gridatek/nx-migrate-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # dev-mode: false (default) - single clean migration
+        # Creates clean PR that will auto-merge if CI passes
+        # (requires auto-merge workflow to be added)
 ```
 
 ### Multiple Nx Packages
@@ -408,12 +409,13 @@ on:
     - cron: '0 2 * * *' # Daily at 2 AM
 ```
 
-### Weekly Updates (Balanced)
+### Weekly Updates (Balanced) - Recommended with Auto-merge
 
 ```yaml
 on:
   schedule:
     - cron: '0 2 * * 1' # Monday at 2 AM
+# Best balance of staying current while allowing time for CI validation
 ```
 
 ### Monthly Updates (Conservative)
@@ -422,6 +424,7 @@ on:
 on:
   schedule:
     - cron: '0 2 1 * *' # First day of month at 2 AM
+# Minimal disruption, manual review preferred
 ```
 
 ## Permissions
@@ -439,6 +442,7 @@ permissions:
 - **Organization repositories**: May need additional setup for GitHub CLI authentication
 - **Branch protection**: The action respects branch protection rules - PRs will be created if direct push is blocked
 - **Token permissions**: Use `${{ secrets.GITHUB_TOKEN }}` which has appropriate permissions for most repositories
+- **Auto-merge workflow**: If using auto-merge, ensure the workflow has the same permissions as above
 
 ## Security Considerations
 

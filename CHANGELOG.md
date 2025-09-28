@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Simplified validation strategy**: Removed built-in validation, now always creates PRs
 - **Repository CI integration**: Leverages existing CI/CD workflows for validation
+- **Optional auto-merge workflow**: New workflow to automatically merge PRs after CI validation passes
 - **Modern workflow approach**: Standard GitHub review process with re-runnable tests
 - **Dev/Prod Mode Support**: New `dev-mode` input for different workflow strategies
   - **Dev Mode**: Creates unique branches with matrix info for comprehensive testing
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-package manager support**: npm, yarn, pnpm with proper lockfile handling
 - **Version tag selection**: Choose between latest, canary, next, or beta versions
 - **Smart Git operations**: Automatic commits, branching, and PR creation
+- **Auto-merge workflow**: Optional workflow monitors PR CI status and auto-merges on success
 - **Migration audit trail**: Optional preservation of migrations.json files
 - **Comprehensive outputs**: Version info, migration status, PR URLs
 - **Error resilience**: Graceful handling of failures and edge cases

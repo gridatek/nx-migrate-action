@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-nx-migrate-action is a GitHub Action that automatically migrates Nx workspaces to the latest version and creates PRs for review and validation. The action is implemented as a composite action using shell scripts.
+nx-migrate-action is a GitHub Action that automatically migrates Nx workspaces to the latest version and creates PRs for review and validation. Optional auto-merge workflow available for seamless CI integration. The action is implemented as a composite action using shell scripts.
 
 ## Architecture
 
@@ -29,6 +29,7 @@ The action follows this sequence:
 
 - **Multi-package manager support**: npm, yarn, pnpm with different command patterns
 - **Always creates PRs**: All migrations create PRs for proper review and CI validation
+- **Optional auto-merge**: Separate workflow can auto-merge PRs after CI validation passes
 - **Clean migration process**: Handles dependency updates and migration execution
 - **Comprehensive outputs**: Version info, migration status, PR URLs
 

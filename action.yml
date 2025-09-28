@@ -1,5 +1,5 @@
 name: 'Nx Migration'
-description: 'Automatically migrate Nx workspace to the latest version and create PRs for review and validation'
+description: 'Automatically migrate Nx workspace to the latest version and create PRs for review and validation. Optional auto-merge workflow available.'
 author: 'Khalil LAGRIDA'
 
 branding:

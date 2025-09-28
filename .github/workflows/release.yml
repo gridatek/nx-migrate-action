@@ -33,7 +33,7 @@ jobs:
           body: |
             ## 🚀 Nx Migration Action v${{ steps.version.outputs.version }}
 
-            Automatically migrate Nx workspaces to the latest version and create PRs for review and validation.
+            Automatically migrate Nx workspaces to the latest version and create PRs for review and validation. Optional auto-merge workflow available for seamless CI integration.
 
             ## 📦 Usage
 
@@ -48,6 +48,7 @@ jobs:
 
             - **Multi-package manager support**: npm, yarn, pnpm
             - **Always creates PRs**: All migrations create PRs for proper review and CI validation
+            - **Optional auto-merge**: Separate workflow can auto-merge PRs after CI validation passes
             - **Clean migration process**: Handles dependency updates and migration execution
             - **Version tags**: Support for latest, canary, next versions
 
