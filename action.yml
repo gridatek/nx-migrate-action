@@ -1,5 +1,5 @@
 name: 'Nx Migration'
-description: 'Automatically migrate Nx workspace to the latest version with validation and smart PR creation'
+description: 'Automatically migrate Nx workspace to the latest version and create PRs for review and validation'
 author: 'Khalil LAGRIDA'
 
 branding:
@@ -16,21 +16,6 @@ inputs:
     description: 'Package manager to use (npm, yarn, pnpm)'
     required: false
     default: 'npm'
-
-  validation-commands:
-    description: 'Commands to run for validation (comma-separated)'
-    required: false
-    default: 'build'
-
-  affected:
-    description: 'Only validate affected projects (true) or all projects (false)'
-    required: false
-    default: 'true'
-
-  merge-strategy:
-    description: 'Merge strategy after validation (auto-merge, always-pr)'
-    required: false
-    default: 'auto-merge'
 
   pr-labels:
     description: 'Labels to add to PRs (comma-separated)'
@@ -93,10 +78,6 @@ outputs:
   has-migrations:
     description: 'Whether migrations were found'
     value: ${{ steps.check-migrations.outputs.has-migrations }}
-
-  validation-result:
-    description: 'Result of validation tests'
-    value: ${{ steps.validation.outputs.result }}
 
   pr-url:
     description: 'URL of created PR (if any)'
@@ -315,73 +296,9 @@ runs:
           echo "ℹ️ No migrations.json to handle"
         fi
 
-    - name: Run validation
-      id: validation
-      if: steps.check-update.outputs.updated == 'true'
-      continue-on-error: true
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "Running validation commands..."
-
-        # Convert comma-separated commands to array
-        IFS=',' read -ra COMMANDS <<< "${{ inputs.validation-commands }}"
-
-        VALIDATION_SUCCESS=true
-
-        # Determine scope flag based on affected input
-        if [[ "${{ inputs.affected }}" == "true" ]]; then
-          SCOPE_FLAG="--affected"
-          SCOPE_DESC="affected projects"
-        else
-          SCOPE_FLAG="--all"
-          SCOPE_DESC="all projects"
-        fi
-
-        echo "Validation scope: ${SCOPE_DESC}"
-
-        for cmd in "${COMMANDS[@]}"; do
-          cmd=$(echo "$cmd" | xargs)  # trim whitespace
-          echo "Running: nx run-many --target=$cmd ${SCOPE_FLAG}"
-
-          if ! npx nx run-many --target="$cmd" ${SCOPE_FLAG} --skip-nx-cache; then
-            echo "❌ Command failed: $cmd"
-            VALIDATION_SUCCESS=false
-          else
-            echo "✅ Command succeeded: $cmd"
-          fi
-        done
-
-        if [[ "$VALIDATION_SUCCESS" == "true" ]]; then
-          echo "result=success" >> $GITHUB_OUTPUT
-          echo "✅ All validation commands passed"
-        else
-          echo "result=failure" >> $GITHUB_OUTPUT
-          echo "❌ Some validation commands failed"
-          exit 1
-        fi
-      env:
-        NX_VERBOSE_LOGGING: 'true'
-        GITHUB_ACTIONS: 'true'
-
-    - name: Push to main branch
-      if: |
-        steps.check-update.outputs.updated == 'true' &&
-        inputs.merge-strategy == 'auto-merge' &&
-        steps.validation.outputs.result == 'success'
-      shell: bash
-      run: |
-        echo "Validation passed, pushing directly to ${{ inputs.target-branch }}"
-        git push origin HEAD:${{ inputs.target-branch }}
-
     - name: Create PR
       id: create-pr
-      if: |
-        steps.check-update.outputs.updated == 'true' &&
-        (
-          inputs.merge-strategy == 'always-pr' ||
-          (inputs.merge-strategy == 'auto-merge' && steps.validation.outputs.result != 'success')
-        )
+      if: steps.check-update.outputs.updated == 'true'
       continue-on-error: true
       shell: bash
       working-directory: ${{ inputs.working-directory }}

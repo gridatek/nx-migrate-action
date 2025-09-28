@@ -33,7 +33,7 @@ jobs:
           body: |
             ## 🚀 Nx Migration Action v${{ steps.version.outputs.version }}
 
-            Automatically migrate Nx workspaces to the latest version with validation and smart PR creation.
+            Automatically migrate Nx workspaces to the latest version and create PRs for review and validation.
 
             ## 📦 Usage
 
@@ -42,14 +42,13 @@ jobs:
               with:
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 package-manager: npm  # or yarn, pnpm
-                validation-commands: build,test
             ```
 
             ## ✨ Key Features
 
             - **Multi-package manager support**: npm, yarn, pnpm
-            - **Smart branching**: Auto-merge on success or create PR on failure
-            - **Configurable validation**: Run build, test, lint on affected or all projects
+            - **Always creates PRs**: All migrations create PRs for proper review and CI validation
+            - **Clean migration process**: Handles dependency updates and migration execution
             - **Version tags**: Support for latest, canary, next versions
 
             ## 🔗 Documentation
