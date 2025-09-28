@@ -82,7 +82,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           package-manager: 'pnpm'
           validation-commands: 'build,test,lint,e2e'
-          validation-scope: 'all'
+          affected: false
           merge-strategy: 'always-pr'
           pr-labels: 'dependencies,nx-migration,high-priority'
           target-branch: 'develop'
@@ -97,7 +97,7 @@ jobs:
 | `nx-version`            | Nx version to use (latest, next, or specific version like 19.8.0)                   | `latest`              | No       |
 | `package-manager`       | Package manager (npm, yarn, pnpm)                                                   | `npm`                 | No       |
 | `validation-commands`   | Validation commands (comma-separated)                                               | `build`               | No       |
-| `validation-scope`      | Validation scope (all, affected)                                                    | `affected`            | No       |
+| `affected`              | Only validate affected projects (true) or all projects (false)                      | `true`                | No       |
 | `merge-strategy`        | Merge strategy after validation (auto-merge, always-pr)                             | `auto-merge`          | No       |
 | `pr-labels`             | PR labels (comma-separated)                                                         | `nx-migrate-action`   | No       |
 | `commit-message-prefix` | Commit message prefix                                                               | `build`               | No       |
