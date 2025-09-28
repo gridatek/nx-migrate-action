@@ -37,7 +37,6 @@ The action follows this sequence:
 
 ### Essential Inputs
 
-- `github-token`: Required for PR creation and pushing
 - `nx-package`: Target package to migrate (default: nx)
 - `package-manager`: npm/yarn/pnpm (default: npm)
 - `validation-commands`: Comma-separated commands to run (default: build)

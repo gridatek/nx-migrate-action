@@ -7,11 +7,6 @@ branding:
   color: 'blue'
 
 inputs:
-  github-token:
-    description: 'GitHub token for creating PRs and pushing changes'
-    required: true
-    default: '${{ github.token }}'
-
   nx-package:
     description: 'The Nx package to check for updates'
     required: false
@@ -390,8 +385,6 @@ runs:
       continue-on-error: true
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
         DEV_MODE="${{ inputs.dev-mode }}"

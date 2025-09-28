@@ -47,8 +47,9 @@ jobs:
           cache: 'npm' # or 'yarn', 'pnpm'
 
       - uses: gridatek/nx-migrate-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Advanced Configuration
@@ -78,8 +79,9 @@ jobs:
           cache: 'pnpm'
 
       - uses: gridatek/nx-migrate-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           package-manager: 'pnpm'
           validation-commands: 'build,test,lint,e2e'
           affected: false
@@ -90,22 +92,21 @@ jobs:
 
 ## Configuration Options
 
-| Input                   | Description                                                                         | Default               | Required |
-| ----------------------- | ----------------------------------------------------------------------------------- | --------------------- | -------- |
-| `github-token`          | GitHub token for creating PRs and pushing                                           | `${{ github.token }}` | Yes      |
-| `nx-package`            | The Nx package to check for updates                                                 | `nx`                  | No       |
-| `nx-version`            | Nx version to use (latest, next, or specific version like 19.8.0)                   | `latest`              | No       |
-| `package-manager`       | Package manager (npm, yarn, pnpm)                                                   | `npm`                 | No       |
-| `validation-commands`   | Validation commands (comma-separated)                                               | `build`               | No       |
-| `affected`              | Only validate affected projects (true) or all projects (false)                      | `true`                | No       |
-| `merge-strategy`        | Merge strategy after validation (auto-merge, always-pr)                             | `auto-merge`          | No       |
-| `pr-labels`             | PR labels (comma-separated)                                                         | `nx-migrate-action`   | No       |
-| `commit-message-prefix` | Commit message prefix                                                               | `build`               | No       |
-| `target-branch`         | Target branch for changes                                                           | `main`                | No       |
-| `working-directory`     | Working directory                                                                   | `.`                   | No       |
-| `push-migrations-json`  | Push migrations.json to repository after successful migration                       | `false`               | No       |
-| `skip-initial-install`  | Skip initial dependency installation (useful if dependencies are already installed) | `false`               | No       |
-| `dev-mode`              | Enable dev mode for testing (creates unique branches with matrix info)              | `false`               | No       |
+| Input                   | Description                                                                         | Default             | Required |
+| ----------------------- | ----------------------------------------------------------------------------------- | ------------------- | -------- |
+| `nx-package`            | The Nx package to check for updates                                                 | `nx`                | No       |
+| `nx-version`            | Nx version to use (latest, next, or specific version like 19.8.0)                   | `latest`            | No       |
+| `package-manager`       | Package manager (npm, yarn, pnpm)                                                   | `npm`               | No       |
+| `validation-commands`   | Validation commands (comma-separated)                                               | `build`             | No       |
+| `affected`              | Only validate affected projects (true) or all projects (false)                      | `true`              | No       |
+| `merge-strategy`        | Merge strategy after validation (auto-merge, always-pr)                             | `auto-merge`        | No       |
+| `pr-labels`             | PR labels (comma-separated)                                                         | `nx-migrate-action` | No       |
+| `commit-message-prefix` | Commit message prefix                                                               | `build`             | No       |
+| `target-branch`         | Target branch for changes                                                           | `main`              | No       |
+| `working-directory`     | Working directory                                                                   | `.`                 | No       |
+| `push-migrations-json`  | Push migrations.json to repository after successful migration                       | `false`             | No       |
+| `skip-initial-install`  | Skip initial dependency installation (useful if dependencies are already installed) | `false`             | No       |
+| `dev-mode`              | Enable dev mode for testing (creates unique branches with matrix info)              | `false`             | No       |
 
 ## Outputs
 
@@ -130,8 +131,8 @@ jobs:
     node-version: '22'
     cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 #### Yarn
@@ -142,8 +143,9 @@ jobs:
     node-version: '22'
     cache: 'yarn'
 - uses: gridatek/nx-migrate-action@v0
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
     package-manager: 'yarn'
 ```
 
@@ -155,8 +157,9 @@ jobs:
     node-version: '22'
     cache: 'pnpm'
 - uses: gridatek/nx-migrate-action@v0
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
     package-manager: 'pnpm'
 ```
 
@@ -168,8 +171,9 @@ jobs:
     node-version: '22'
     cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
     merge-strategy: 'always-pr'
     validation-commands: 'build,test,lint'
 ```
@@ -182,10 +186,10 @@ jobs:
     node-version: '22'
     cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-    # Uses auto-merge by default
-    # Only runs build validation by default
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Uses auto-merge by default
+  # Only runs build validation by default
 ```
 
 ### Dev Mode vs Production Mode
@@ -200,9 +204,9 @@ The action supports two modes to handle different use cases:
     node-version: '22'
     cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-    # dev-mode defaults to 'false'
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # dev-mode defaults to 'false'
 ```
 
 **Features:**
@@ -221,8 +225,9 @@ The action supports two modes to handle different use cases:
     node-version: '22'
     cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
     dev-mode: 'true'
 ```
 
@@ -260,8 +265,9 @@ jobs:
           cache: ${{ matrix.package-manager }}
 
       - uses: gridatek/nx-migrate-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           package-manager: ${{ matrix.package-manager }}
           dev-mode: 'true' # Creates 6 unique PRs for testing
 ```
@@ -288,8 +294,9 @@ jobs:
           cache: 'npm'
 
       - uses: gridatek/nx-migrate-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           # dev-mode: false (default) - single clean migration
 ```
 
@@ -309,13 +316,15 @@ steps:
       cache: 'npm'
 
   - uses: gridatek/nx-migrate-action@v0
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     with:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
       nx-package: 'nx'
 
   - uses: gridatek/nx-migrate-action@v0
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     with:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
       nx-package: '@nx/angular'
 ```
 
@@ -446,9 +455,8 @@ Enable verbose logging:
     node-version: '22'
     cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
   env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     ACTIONS_STEP_DEBUG: true
 ```
 
