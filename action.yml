@@ -159,10 +159,15 @@ runs:
 
             # Extract version from JSON using jq
             if command -v jq >/dev/null 2>&1; then
-              LATEST_VERSION=$(echo "$YARN_INFO_JSON" | jq -r '.data.version // empty' 2>/dev/null)
+              # Try to get version from dist-tags first (for latest, next, etc.), then fallback to direct version field
+              LATEST_VERSION=$(echo "$YARN_INFO_JSON" | jq -r '.data."dist-tags"."${{ inputs.nx-version }}" // .data.version // empty' 2>/dev/null)
             else
               # Fallback without jq - extract version from JSON manually
-              LATEST_VERSION=$(echo "$YARN_INFO_JSON" | grep -o '"version":"[^"]*"' | sed 's/"version":"\([^"]*\)"/\1/' | head -1)
+              # First try dist-tags, then fallback to direct version
+              LATEST_VERSION=$(echo "$YARN_INFO_JSON" | grep -o '"${{ inputs.nx-version }}":"[^"]*"' | sed 's/"${{ inputs.nx-version }}":"\([^"]*\)"/\1/' | head -1)
+              if [[ -z "$LATEST_VERSION" ]]; then
+                LATEST_VERSION=$(echo "$YARN_INFO_JSON" | grep -o '"version":"[^"]*"' | sed 's/"version":"\([^"]*\)"/\1/' | head -1)
+              fi
             fi
 
             echo "Extracted latest version: '${LATEST_VERSION}'"
@@ -176,16 +181,21 @@ runs:
             ;;
           pnpm)
             CURRENT_VERSION=$(pnpm list ${{ inputs.nx-package }} --depth=0 --json 2>/dev/null | jq -r '.[0].dependencies["${{ inputs.nx-package }}"].version // empty')
+            # pnpm view with dist-tags should return the actual version number
             LATEST_VERSION=$(pnpm view ${{ inputs.nx-package }}@${{ inputs.nx-version }} version)
             ;;
         esac
 
-        # Validate that LATEST_VERSION is a proper version number
-        if [[ ! "$LATEST_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+        # Validate that LATEST_VERSION is a proper version number (supports pre-release versions)
+        if [[ ! "$LATEST_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
           echo "⚠️ Warning: Invalid version detected: '$LATEST_VERSION'"
           echo "Setting LATEST_VERSION to CURRENT_VERSION to avoid issues"
           LATEST_VERSION="$CURRENT_VERSION"
         fi
+
+        echo "Final version resolution:"
+        echo "  Current: $CURRENT_VERSION"
+        echo "  Latest:  $LATEST_VERSION"
 
         if [[ "$CURRENT_VERSION" != "$LATEST_VERSION" && -n "$LATEST_VERSION" && -n "$CURRENT_VERSION" ]]; then
           echo "Current version: $CURRENT_VERSION"
