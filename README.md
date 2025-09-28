@@ -103,6 +103,7 @@ jobs:
 | `target-branch` | Target branch for changes                    | `main` | No |
 | `working-directory` | Working directory                            | `.` | No |
 | `push-migrations-json` | Push migrations.json to repository after successful migration | `false` | No |
+| `skip-initial-install` | Skip initial dependency installation (useful if dependencies are already installed) | `false` | No |
 | `dev-mode` | Enable dev mode for testing (creates unique branches with matrix info) | `false` | No |
 
 ## Outputs
