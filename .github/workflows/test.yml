@@ -95,7 +95,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           package-manager: npm
-          node-version: ${{ matrix.node-version }}
           working-directory: './test-workspace'
           validation-commands: 'build'
           merge-strategy: 'always-pr'  # Always create PR for testing
