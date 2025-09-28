@@ -37,7 +37,6 @@ The action follows this sequence:
 
 ### Essential Inputs
 
-- `github-token`: Required for PR creation and pushing
 - `nx-package`: Target package to migrate (default: nx)
 - `package-manager`: npm/yarn/pnpm (default: npm)
 - `validation-commands`: Comma-separated commands to run (default: build)
@@ -46,7 +45,7 @@ The action follows this sequence:
 ### Behavioral Controls
 
 - `merge-strategy`: auto-merge (push directly to main if validation passes) or always-pr (default: auto-merge)
-- `validation-scope`: Use --affected or --all (default: affected)
+- `affected`: Only validate affected projects (true) or all projects (false) (default: true)
 - `nx-version-tag`: Version tag for updates - latest, beta, canary, next (default: latest)
 - `push-migrations-json`: Keep migrations.json for audit trail (default: false)
 - `create-missing-labels`: Auto-create PR labels if missing (default: true)

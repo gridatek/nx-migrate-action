@@ -92,8 +92,9 @@ jobs:
 
       - name: Test Action
         uses: ./
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           package-manager: npm
           working-directory: './test-workspace'
           validation-commands: 'build'

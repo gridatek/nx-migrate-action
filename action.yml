@@ -7,11 +7,6 @@ branding:
   color: 'blue'
 
 inputs:
-  github-token:
-    description: 'GitHub token for creating PRs and pushing changes'
-    required: true
-    default: '${{ github.token }}'
-
   nx-package:
     description: 'The Nx package to check for updates'
     required: false
@@ -27,10 +22,10 @@ inputs:
     required: false
     default: 'build'
 
-  validation-scope:
-    description: 'Scope for validation commands (all, affected)'
+  affected:
+    description: 'Only validate affected projects (true) or all projects (false)'
     required: false
-    default: 'affected'
+    default: 'true'
 
   merge-strategy:
     description: 'Merge strategy after validation (auto-merge, always-pr)'
@@ -334,11 +329,22 @@ runs:
 
         VALIDATION_SUCCESS=true
 
+        # Determine scope flag based on affected input
+        if [[ "${{ inputs.affected }}" == "true" ]]; then
+          SCOPE_FLAG="--affected"
+          SCOPE_DESC="affected projects"
+        else
+          SCOPE_FLAG="--all"
+          SCOPE_DESC="all projects"
+        fi
+
+        echo "Validation scope: ${SCOPE_DESC}"
+
         for cmd in "${COMMANDS[@]}"; do
           cmd=$(echo "$cmd" | xargs)  # trim whitespace
-          echo "Running: nx run-many --target=$cmd --${{ inputs.validation-scope }}"
+          echo "Running: nx run-many --target=$cmd ${SCOPE_FLAG}"
 
-          if ! npx nx run-many --target="$cmd" --${{ inputs.validation-scope }} --skip-nx-cache; then
+          if ! npx nx run-many --target="$cmd" ${SCOPE_FLAG} --skip-nx-cache; then
             echo "❌ Command failed: $cmd"
             VALIDATION_SUCCESS=false
           else
@@ -379,8 +385,6 @@ runs:
       continue-on-error: true
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
         DEV_MODE="${{ inputs.dev-mode }}"
@@ -511,10 +515,11 @@ runs:
         - Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '➖ Nx didn''t create any migrations for this version update' }}
         - Validation result: ${{ steps.validation.outputs.result || 'skipped' }}
 
-        ### Matrix Configuration:
+        ### Configuration:
         - **Matrix:** ${CLEAN_MATRIX:-${CLEAN_JOB_ID}}
         - **Package Manager:** ${{ inputs.package-manager }}
         - **Working Directory:** ${{ inputs.working-directory }}
+        - **Validation Scope:** ${{ inputs.affected == 'true' && 'Affected projects only' || 'All projects' }}
 
         ---
         *This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
