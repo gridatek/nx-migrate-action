@@ -46,7 +46,7 @@ The action follows this sequence:
 ### Behavioral Controls
 
 - `merge-strategy`: auto-merge (push directly to main if validation passes) or always-pr (default: auto-merge)
-- `validation-scope`: Use --affected or --all (default: affected)
+- `affected`: Only validate affected projects (true) or all projects (false) (default: true)
 - `nx-version-tag`: Version tag for updates - latest, beta, canary, next (default: latest)
 - `push-migrations-json`: Keep migrations.json for audit trail (default: false)
 - `create-missing-labels`: Auto-create PR labels if missing (default: true)

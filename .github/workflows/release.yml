@@ -49,7 +49,7 @@ jobs:
 
             - **Multi-package manager support**: npm, yarn, pnpm
             - **Smart branching**: Auto-merge on success or create PR on failure
-            - **Configurable validation**: Run build, test, lint with --affected or --all
+            - **Configurable validation**: Run build, test, lint on affected or all projects
             - **Version tags**: Support for latest, canary, next versions
 
             ## 🔗 Documentation
