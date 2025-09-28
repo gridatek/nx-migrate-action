@@ -12,6 +12,15 @@ Automatically migrate your Nx workspace to the latest version with smart validat
 - ⚙️ **Highly Configurable**: Customize every aspect of the migration process
 - 🏷️ **Auto Labeling**: Automatically labels PRs for easy organization
 
+## Prerequisites
+
+This action requires Node.js to be set up in your workflow before use. The action runs Nx commands (`npx nx migrate`, `npx nx run-many`) and package manager operations that require Node.js.
+
+**Required setup:**
+- Use `actions/setup-node@v4` before calling this action
+- Configure the appropriate cache for your package manager
+- Ensure Node.js version is compatible with your Nx workspace
+
 ## Quick Start
 
 ### Basic Usage
@@ -30,7 +39,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'  # or 'yarn', 'pnpm'
+
       - uses: gridatek/nx-migrate-action@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -51,16 +65,20 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
       - uses: gridatek/nx-migrate-action@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          node-version: '18'
           package-manager: 'pnpm'
           validation-commands: 'build,test,lint,e2e'
           validation-scope: 'all'
@@ -76,7 +94,6 @@ jobs:
 | `github-token` | GitHub token for creating PRs and pushing    | `${{ github.token }}` | Yes |
 | `nx-package` | The Nx package to check for updates          | `nx` | No |
 | `nx-version` | Nx version to use (latest, next, or specific version like 19.8.0) | `latest` | No |
-| `node-version` | Node.js version to use                       | `22` | No |
 | `package-manager` | Package manager (npm, yarn, pnpm)            | `npm` | No |
 | `validation-commands` | Validation commands (comma-separated)        | `build` | No |
 | `validation-scope` | Validation scope (all, affected)             | `affected` | No |
@@ -105,6 +122,10 @@ jobs:
 
 #### npm (default)
 ```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -112,6 +133,10 @@ jobs:
 
 #### Yarn
 ```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'yarn'
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -120,6 +145,10 @@ jobs:
 
 #### pnpm
 ```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'pnpm'
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -129,6 +158,10 @@ jobs:
 ### Conservative Approach (Always Create PRs)
 
 ```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -139,6 +172,10 @@ jobs:
 ### Fast Auto-merge (Default Strategy)
 
 ```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -152,6 +189,10 @@ The action supports two modes to handle different use cases:
 
 #### Production Mode (Default)
 ```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -167,6 +208,10 @@ The action supports two modes to handle different use cases:
 
 #### Dev Mode (Testing)
 ```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -199,11 +244,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: ${{ matrix.package-manager }}
+
       - uses: gridatek/nx-migrate-action@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           package-manager: ${{ matrix.package-manager }}
-          node-version: ${{ matrix.node-version }}
           dev-mode: 'true'  # Creates 6 unique PRs for testing
 ```
 
@@ -222,6 +271,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
       - uses: gridatek/nx-migrate-action@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -237,6 +291,11 @@ steps:
   - uses: actions/checkout@v4
     with:
       fetch-depth: 0
+
+  - uses: actions/setup-node@v4
+    with:
+      node-version: '22'
+      cache: 'npm'
 
   - uses: gridatek/nx-migrate-action@v0
     with:
@@ -363,6 +422,10 @@ permissions:
 Enable verbose logging:
 
 ```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'npm'
 - uses: gridatek/nx-migrate-action@v0
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
