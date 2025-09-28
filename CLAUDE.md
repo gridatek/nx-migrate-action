@@ -98,6 +98,7 @@ The action always creates detailed PRs with:
 
 - **No built-in validation**: Action only performs migration and creates PR
 - **Repository CI handles validation**: Tests, builds, and lints run via PR workflows
+- **Optional auto-merge**: Separate workflow can automatically merge PRs after CI validation passes
 - **Modern approach**: Leverages existing repository CI/CD for validation
 - **Better developer experience**: Standard GitHub review process with re-runnable tests
 

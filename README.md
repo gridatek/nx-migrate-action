@@ -171,6 +171,51 @@ jobs:
     target-branch: 'develop'
 ```
 
+### Optional Auto-merge After CI Validation
+
+You can add an optional workflow to automatically merge Nx migration PRs after all CI checks pass:
+
+```yaml
+# .github/workflows/auto-merge-nx-prs.yml
+name: Auto-merge Nx Migration PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  check_suite:
+    types: [completed]
+  status: {}
+
+jobs:
+  auto-merge:
+    name: Auto-merge Nx Migration PR
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.user.login == 'github-actions[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'nx-migrate-action')
+
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+
+    steps:
+      - name: Wait for CI checks
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: wait-for-checks
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          timeoutSeconds: 1800 # 30 minutes
+
+      - name: Auto-merge PR
+        if: steps.wait-for-checks.outputs.conclusion == 'success'
+        uses: pascalgn/merge-action@v0.15.6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          merge_method: squash
+```
+
 ### Dev Mode vs Production Mode
 
 The action supports two modes to handle different use cases:
@@ -327,7 +372,13 @@ flowchart TD
     J --> K[Execute Migrations]
     K --> L[Commit Changes]
     L --> P[Create Pull Request]
-    P --> R[End: PR Created for Review]
+    P --> Q{Optional Auto-merge?}
+    Q -->|Yes| R[Wait for CI Checks]
+    Q -->|No| S[End: Manual Review]
+    R --> T{All Checks Pass?}
+    T -->|Yes| U[Auto-merge PR]
+    T -->|No| V[End: Manual Review Required]
+    U --> W[End: Auto-merged]
 
     style E fill:#e1f5fe
     style F fill:#f3e5f5
@@ -345,6 +396,7 @@ flowchart TD
 4. **Code Migrations**: Executes any migrations found in `migrations.json`
 5. **PR Creation**: Always creates a pull request for review and validation by repository CI/CD
 6. **Validation**: Repository's existing CI/CD workflows handle testing, building, and validation
+7. **Optional Auto-merge**: Optional workflow can automatically merge PRs after all CI checks pass
 
 ## Workflow Strategies
 
@@ -416,6 +468,12 @@ permissions:
 
 - Verify your package manager is correctly specified and available
 
+**"Auto-merge not working"**
+
+- Ensure you've added the optional auto-merge workflow (`.github/workflows/auto-merge-nx-prs.yml`)
+- Check that your repository has the required permissions for the workflow
+- Verify that your CI checks are properly configured and passing
+
 ### Debug Mode
 
 Enable verbose logging:
@@ -450,6 +508,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Removed built-in validation**: Action now focuses solely on migration and PR creation
 - **Repository CI integration**: Leverages existing CI/CD workflows for validation
 - **Always creates PRs**: Modern approach that uses standard GitHub review process
+- **Optional auto-merge**: Added workflow to automatically merge PRs after CI validation passes
 - **Better developer experience**: Re-runnable tests, proper CI environment, standard workflows
 
 ### Dev/Prod Mode Support
