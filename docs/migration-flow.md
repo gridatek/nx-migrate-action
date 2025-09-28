@@ -227,8 +227,8 @@ Start → Setup → Install → Version Check → Prod Mode → Branch exists �
 | `push-migrations-json: false` | migrations.json removed after successful migration   |
 | `merge-strategy: auto-merge`  | Auto-merge on validation success, PR on failure      |
 | `merge-strategy: always-pr`   | Always create PR regardless of validation result     |
-| `validation-scope: affected`  | Only validate affected projects                      |
-| `validation-scope: all`       | Validate all projects in workspace                   |
+| `affected: true`              | Only validate affected projects                      |
+| `affected: false`             | Validate all projects in workspace                   |
 
 ## 🎨 Legend
 
