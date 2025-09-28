@@ -17,6 +17,7 @@ Automatically migrate your Nx workspace to the latest version with smart validat
 This action requires Node.js to be set up in your workflow before use. The action runs Nx commands (`npx nx migrate`, `npx nx run-many`) and package manager operations that require Node.js.
 
 **Required setup:**
+
 - Use `actions/setup-node@v4` before calling this action
 - Configure the appropriate cache for your package manager
 - Ensure Node.js version is compatible with your Nx workspace
@@ -30,7 +31,7 @@ name: Nx Migration
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 1 * * *'  # Daily at 1 AM
+    - cron: '0 1 * * *' # Daily at 1 AM
 
 jobs:
   nx-migrate:
@@ -43,7 +44,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'  # or 'yarn', 'pnpm'
+          cache: 'npm' # or 'yarn', 'pnpm'
 
       - uses: gridatek/nx-migrate-action@v0
         with:
@@ -57,7 +58,7 @@ name: Nx Migration
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 1 * * 1'  # Weekly on Mondays
+    - cron: '0 1 * * 1' # Weekly on Mondays
 
 jobs:
   nx-migrate:
@@ -89,39 +90,40 @@ jobs:
 
 ## Configuration Options
 
-| Input | Description                                  | Default | Required |
-|-------|----------------------------------------------|---------|----------|
-| `github-token` | GitHub token for creating PRs and pushing    | `${{ github.token }}` | Yes |
-| `nx-package` | The Nx package to check for updates          | `nx` | No |
-| `nx-version` | Nx version to use (latest, next, or specific version like 19.8.0) | `latest` | No |
-| `package-manager` | Package manager (npm, yarn, pnpm)            | `npm` | No |
-| `validation-commands` | Validation commands (comma-separated)        | `build` | No |
-| `validation-scope` | Validation scope (all, affected)             | `affected` | No |
-| `merge-strategy` | Merge strategy after validation (auto-merge, always-pr) | `auto-merge` | No |
-| `pr-labels` | PR labels (comma-separated)                  | `nx-migrate-action` | No |
-| `commit-message-prefix` | Commit message prefix                        | `build` | No |
-| `target-branch` | Target branch for changes                    | `main` | No |
-| `working-directory` | Working directory                            | `.` | No |
-| `push-migrations-json` | Push migrations.json to repository after successful migration | `false` | No |
-| `skip-initial-install` | Skip initial dependency installation (useful if dependencies are already installed) | `false` | No |
-| `dev-mode` | Enable dev mode for testing (creates unique branches with matrix info) | `false` | No |
+| Input                   | Description                                                                         | Default               | Required |
+| ----------------------- | ----------------------------------------------------------------------------------- | --------------------- | -------- |
+| `github-token`          | GitHub token for creating PRs and pushing                                           | `${{ github.token }}` | Yes      |
+| `nx-package`            | The Nx package to check for updates                                                 | `nx`                  | No       |
+| `nx-version`            | Nx version to use (latest, next, or specific version like 19.8.0)                   | `latest`              | No       |
+| `package-manager`       | Package manager (npm, yarn, pnpm)                                                   | `npm`                 | No       |
+| `validation-commands`   | Validation commands (comma-separated)                                               | `build`               | No       |
+| `validation-scope`      | Validation scope (all, affected)                                                    | `affected`            | No       |
+| `merge-strategy`        | Merge strategy after validation (auto-merge, always-pr)                             | `auto-merge`          | No       |
+| `pr-labels`             | PR labels (comma-separated)                                                         | `nx-migrate-action`   | No       |
+| `commit-message-prefix` | Commit message prefix                                                               | `build`               | No       |
+| `target-branch`         | Target branch for changes                                                           | `main`                | No       |
+| `working-directory`     | Working directory                                                                   | `.`                   | No       |
+| `push-migrations-json`  | Push migrations.json to repository after successful migration                       | `false`               | No       |
+| `skip-initial-install`  | Skip initial dependency installation (useful if dependencies are already installed) | `false`               | No       |
+| `dev-mode`              | Enable dev mode for testing (creates unique branches with matrix info)              | `false`               | No       |
 
 ## Outputs
 
-| Output | Description |
-|--------|-------------|
-| `updated` | Whether Nx was updated |
-| `current-version` | Current Nx version before update |
-| `latest-version` | Latest Nx version |
-| `has-migrations` | Whether migrations were found |
-| `validation-result` | Result of validation tests |
-| `pr-url` | URL of created PR (if any) |
+| Output              | Description                      |
+| ------------------- | -------------------------------- |
+| `updated`           | Whether Nx was updated           |
+| `current-version`   | Current Nx version before update |
+| `latest-version`    | Latest Nx version                |
+| `has-migrations`    | Whether migrations were found    |
+| `validation-result` | Result of validation tests       |
+| `pr-url`            | URL of created PR (if any)       |
 
 ## Usage Examples
 
 ### With Different Package Managers
 
 #### npm (default)
+
 ```yaml
 - uses: actions/setup-node@v4
   with:
@@ -133,6 +135,7 @@ jobs:
 ```
 
 #### Yarn
+
 ```yaml
 - uses: actions/setup-node@v4
   with:
@@ -145,6 +148,7 @@ jobs:
 ```
 
 #### pnpm
+
 ```yaml
 - uses: actions/setup-node@v4
   with:
@@ -189,6 +193,7 @@ jobs:
 The action supports two modes to handle different use cases:
 
 #### Production Mode (Default)
+
 ```yaml
 - uses: actions/setup-node@v4
   with:
@@ -201,6 +206,7 @@ The action supports two modes to handle different use cases:
 ```
 
 **Features:**
+
 - Creates simple branch names: `nx-migrate-21.5.3`
 - Checks if branch already exists and skips if found
 - Prevents duplicate migration work
@@ -208,6 +214,7 @@ The action supports two modes to handle different use cases:
 - Ideal for real production migrations
 
 #### Dev Mode (Testing)
+
 ```yaml
 - uses: actions/setup-node@v4
   with:
@@ -220,6 +227,7 @@ The action supports two modes to handle different use cases:
 ```
 
 **Features:**
+
 - Creates unique branches with matrix info: `nx-migrate-21.5.3-package-manager-yarn-node-version-24-18059576033-1`
 - Each matrix job creates separate PRs
 - Useful for testing workflows and validating across different configurations
@@ -228,6 +236,7 @@ The action supports two modes to handle different use cases:
 ### Matrix Testing Strategy
 
 #### Testing Different Configurations
+
 ```yaml
 name: Test Nx Migration
 on: workflow_dispatch
@@ -254,15 +263,16 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           package-manager: ${{ matrix.package-manager }}
-          dev-mode: 'true'  # Creates 6 unique PRs for testing
+          dev-mode: 'true' # Creates 6 unique PRs for testing
 ```
 
 #### Production Migration
+
 ```yaml
 name: Nx Migration
 on:
   schedule:
-    - cron: '0 2 * * 1'  # Weekly on Mondays
+    - cron: '0 2 * * 1' # Weekly on Mondays
 
 jobs:
   migrate:
@@ -359,24 +369,27 @@ flowchart TD
 ## Workflow Strategies
 
 ### Daily Updates (Aggressive)
+
 ```yaml
 on:
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM
+    - cron: '0 2 * * *' # Daily at 2 AM
 ```
 
 ### Weekly Updates (Balanced)
+
 ```yaml
 on:
   schedule:
-    - cron: '0 2 * * 1'  # Monday at 2 AM
+    - cron: '0 2 * * 1' # Monday at 2 AM
 ```
 
 ### Monthly Updates (Conservative)
+
 ```yaml
 on:
   schedule:
-    - cron: '0 2 1 * *'  # First day of month at 2 AM
+    - cron: '0 2 1 * *' # First day of month at 2 AM
 ```
 
 ## Permissions
@@ -385,11 +398,12 @@ Your workflow needs these permissions:
 
 ```yaml
 permissions:
-  contents: write      # To push commits and create branches
+  contents: write # To push commits and create branches
   pull-requests: write # To create and manage PRs
 ```
 
 ### Important Notes:
+
 - **Organization repositories**: May need additional setup for GitHub CLI authentication
 - **Branch protection**: The action respects branch protection rules - PRs will be created if direct push is blocked
 - **Token permissions**: Use `${{ secrets.GITHUB_TOKEN }}` which has appropriate permissions for most repositories
@@ -406,16 +420,20 @@ permissions:
 ### Common Issues
 
 **"No changes to commit"**
+
 - This is normal when Nx is already up to date
 
 **"Validation failed"**
+
 - Check the workflow logs for specific test failures
 - The action will create a PR for manual review
 
 **"Permission denied"**
+
 - Ensure your workflow has `contents: write` and `pull-requests: write` permissions
 
 **"Package manager not found"**
+
 - Verify your package manager is correctly specified and available
 
 ### Debug Mode
@@ -449,6 +467,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Recent Updates
 
 ### Dev/Prod Mode Support
+
 - **Dev Mode**: Added `dev-mode` input for testing workflows with matrix strategies
   - Creates unique branches with matrix info: `nx-migrate-21.5.3-package-manager-yarn-node-version-24-...`
   - Each matrix job creates separate PRs for comprehensive testing
@@ -459,6 +478,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
   - Single clean PR per version update
 
 ### Version Detection Improvements
+
 - **Fixed yarn version detection**: Now correctly displays actual version numbers instead of version tags (e.g., "21.2.2 → 21.5.3" instead of "21.2.2 → latest")
 - **Enhanced package manager support**: Improved reliability across npm, yarn, and pnpm
 - **Updated default PR labels**: Simplified to use `nx-migrate-action` for better action identification

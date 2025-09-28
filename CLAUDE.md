@@ -17,6 +17,7 @@ nx-migrate-action is a GitHub Action that automatically migrates Nx workspaces t
 ### Action Workflow
 
 The action follows this sequence:
+
 1. **Setup** (action.yml:118-149): Node.js setup and dependency installation
 2. **Version Check** (action.yml:151-183): Compare current vs latest Nx package version
 3. **Migration** (action.yml:184-207): Run `nx migrate latest` and reinstall dependencies
@@ -35,6 +36,7 @@ The action follows this sequence:
 ## Configuration
 
 ### Essential Inputs
+
 - `github-token`: Required for PR creation and pushing
 - `nx-package`: Target package to migrate (default: nx)
 - `package-manager`: npm/yarn/pnpm (default: npm)
@@ -42,6 +44,7 @@ The action follows this sequence:
 - `node-version`: Node.js version to use (default: 22)
 
 ### Behavioral Controls
+
 - `merge-strategy`: auto-merge (push directly to main if validation passes) or always-pr (default: auto-merge)
 - `validation-scope`: Use --affected or --all (default: affected)
 - `nx-version-tag`: Version tag for updates - latest, beta, canary, next (default: latest)
@@ -51,6 +54,7 @@ The action follows this sequence:
 ## Testing
 
 The action includes comprehensive testing via `.github/workflows/test.yml`:
+
 - Matrix testing across package managers (npm, yarn, pnpm)
 - Matrix testing across Node.js versions (22, 24)
 - Default Node.js version is set to LTS (v22) for stability
@@ -60,6 +64,7 @@ The action includes comprehensive testing via `.github/workflows/test.yml`:
 ### Test Commands
 
 No package.json scripts are configured. Testing is done via GitHub Actions workflow:
+
 - **YAML linting**: `yamllint action.yml` (uses .yamllint.yml config)
 - **Action validation**: Basic structural validation of action.yml
 - **Functional testing**: Matrix testing across Node.js versions (22, 24) and package managers
@@ -68,6 +73,7 @@ No package.json scripts are configured. Testing is done via GitHub Actions workf
 ## Development Guidelines
 
 ### Action Development
+
 - All logic is in action.yml as composite shell steps
 - Use proper shell scripting with error handling
 - Support multiple package managers with case statements
@@ -75,6 +81,7 @@ No package.json scripts are configured. Testing is done via GitHub Actions workf
 - Handle edge cases (no changes, missing files, validation failures)
 
 ### Shell Script Patterns
+
 - Use `case` statements for package manager branching
 - Parse JSON with `jq` for package version detection
 - Use `continue-on-error: true` for validation steps
@@ -82,7 +89,9 @@ No package.json scripts are configured. Testing is done via GitHub Actions workf
 - Branch naming with run IDs to avoid conflicts
 
 ### PR Creation Logic
+
 The action creates detailed PRs with:
+
 - Version change summary
 - Migration status
 - Validation results
@@ -90,6 +99,7 @@ The action creates detailed PRs with:
 - Fallback to existing PR detection
 
 ### Error Handling
+
 - Graceful handling of missing migrations.json
 - Continue-on-error for validation with proper output setting
 - Fallback mechanisms for PR creation

@@ -22,6 +22,7 @@ git push origin "v0.1.0"
 ## 📈 Version Numbers
 
 Using 0.x.x versions for initial development:
+
 - **v0.0.1** - Initial patches
 - **v0.1.0** - New features (pre-1.0)
 - **v0.x.x** - Breaking changes allowed
@@ -29,10 +30,12 @@ Using 0.x.x versions for initial development:
 ## ✅ What Happens Next
 
 The release workflow automatically:
+
 - Creates GitHub release
 - Updates major version tag (v0)
 - Generates release notes
 
 Users can then reference:
+
 - `@v0.1.0` - Specific version
 - `@v0` - Latest v0.x.x version

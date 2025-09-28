@@ -328,16 +328,16 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         echo "Running validation commands..."
-        
+
         # Convert comma-separated commands to array
         IFS=',' read -ra COMMANDS <<< "${{ inputs.validation-commands }}"
-        
+
         VALIDATION_SUCCESS=true
-        
+
         for cmd in "${COMMANDS[@]}"; do
           cmd=$(echo "$cmd" | xargs)  # trim whitespace
           echo "Running: nx run-many --target=$cmd --${{ inputs.validation-scope }}"
-        
+
           if ! npx nx run-many --target="$cmd" --${{ inputs.validation-scope }} --skip-nx-cache; then
             echo "❌ Command failed: $cmd"
             VALIDATION_SUCCESS=false
@@ -345,7 +345,7 @@ runs:
             echo "✅ Command succeeded: $cmd"
           fi
         done
-        
+
         if [[ "$VALIDATION_SUCCESS" == "true" ]]; then
           echo "result=success" >> $GITHUB_OUTPUT
           echo "✅ All validation commands passed"
@@ -448,7 +448,7 @@ runs:
         echo "Branch name: ${BRANCH}"
         echo "Working directory: $(pwd)"
         echo "Git status: $(git status --short)"
-        
+
         # Determine PR reason
         if [[ "${{ inputs.merge-strategy }}" == "always-pr" ]]; then
           PR_REASON="Manual review requested (always-pr strategy)"
@@ -457,7 +457,7 @@ runs:
           PR_REASON="Validation tests failed"
           STATUS_EMOJI="⚠️"
         fi
-        
+
         echo "Creating PR with branch: ${BRANCH}"
 
         # Check if branch already exists locally or remotely
@@ -483,10 +483,10 @@ runs:
           exit 1
         fi
         echo "✅ Branch pushed successfully"
-        
+
         # Convert labels to space-separated format for gh cli
         LABELS=$(echo "${{ inputs.pr-labels }}" | tr ',' ' ')
-        
+
         # Create PR title and body - handle dev/prod mode
         if [ "$DEV_MODE" = "true" ]; then
           # Dev mode: include matrix info for identification
