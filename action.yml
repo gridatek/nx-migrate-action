@@ -370,14 +370,9 @@ runs:
         echo "Working directory: $(pwd)"
         echo "Git status: $(git status --short)"
 
-        # Determine PR reason
-        if [[ "${{ inputs.merge-strategy }}" == "always-pr" ]]; then
-          PR_REASON="Manual review requested (always-pr strategy)"
-          STATUS_EMOJI="🔍"
-        else
-          PR_REASON="Validation tests failed"
-          STATUS_EMOJI="⚠️"
-        fi
+        # Set PR reason for always creating PRs
+        PR_REASON="Ready for review and CI validation"
+        STATUS_EMOJI="🔍"
 
         echo "Creating PR with branch: ${BRANCH}"
 
@@ -430,13 +425,13 @@ runs:
         ### Changes Made:
         - Updated Nx workspace to version ${LATEST_VERSION}
         - Ran automated migrations: ${{ steps.check-migrations.outputs.has-migrations == 'true' && '✅ Yes' || '➖ Nx didn''t create any migrations for this version update' }}
-        - Validation result: ${{ steps.validation.outputs.result || 'skipped' }}
+        - Repository CI validation: Will be handled by your existing CI/CD workflows
 
         ### Configuration:
         - **Matrix:** ${CLEAN_MATRIX:-${CLEAN_JOB_ID}}
         - **Package Manager:** ${{ inputs.package-manager }}
         - **Working Directory:** ${{ inputs.working-directory }}
-        - **Validation Scope:** ${{ inputs.affected == 'true' && 'Affected projects only' || 'All projects' }}
+        - **Repository CI:** Will validate changes via standard CI/CD pipeline
 
         ---
         *This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
