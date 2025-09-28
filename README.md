@@ -1,20 +1,20 @@
 # Nx Migration Action
 
-Automatically migrate your Nx workspace to the latest version with smart validation and PR creation.
+Automatically migrate your Nx workspace to the latest version and create PRs for review and validation. Optional auto-merge workflow available for seamless CI integration.
 
 ## Features
 
 - 🔄 **Automatic Updates**: Checks for and applies Nx updates automatically
 - 🛠️ **Migration Handling**: Runs Nx migrations when available
-- ✅ **Validation**: Runs configurable validation commands (build, test, etc.)
-- 🤖 **Smart Branching**: Auto-merge on success, create PR on failure
+- 🔄 **Always Creates PRs**: All migrations create PRs for proper review and CI validation
+- 🤖 **Optional Auto-merge**: Separate workflow can auto-merge PRs after CI validation passes
 - 📦 **Multi Package Manager**: Supports npm, yarn, and pnpm
-- ⚙️ **Highly Configurable**: Customize every aspect of the migration process
+- ⚙️ **Configurable**: Customize migration process and PR settings
 - 🏷️ **Auto Labeling**: Automatically labels PRs for easy organization
 
 ## Prerequisites
 
-This action requires Node.js to be set up in your workflow before use. The action runs Nx commands (`npx nx migrate`, `npx nx run-many`) and package manager operations that require Node.js.
+This action requires Node.js to be set up in your workflow before use. The action runs Nx commands (`npx nx migrate`) and package manager operations that require Node.js.
 
 **Required setup:**
 
@@ -49,7 +49,6 @@ jobs:
       - uses: gridatek/nx-migrate-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
 ```
 
 ### Advanced Configuration
@@ -83,9 +82,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           package-manager: 'pnpm'
-          validation-commands: 'build,test,lint,e2e'
-          affected: false
-          merge-strategy: 'always-pr'
           pr-labels: 'dependencies,nx-migration,high-priority'
           target-branch: 'develop'
 ```
@@ -95,29 +91,27 @@ jobs:
 | Input                   | Description                                                                         | Default             | Required |
 | ----------------------- | ----------------------------------------------------------------------------------- | ------------------- | -------- |
 | `nx-package`            | The Nx package to check for updates                                                 | `nx`                | No       |
-| `nx-version`            | Nx version to use (latest, next, or specific version like 19.8.0)                   | `latest`            | No       |
+| `nx-version-tag`        | Nx version tag to use (latest, next, beta, canary)                                  | `latest`            | No       |
 | `package-manager`       | Package manager (npm, yarn, pnpm)                                                   | `npm`               | No       |
-| `validation-commands`   | Validation commands (comma-separated)                                               | `build`             | No       |
-| `affected`              | Only validate affected projects (true) or all projects (false)                      | `true`              | No       |
-| `merge-strategy`        | Merge strategy after validation (auto-merge, always-pr)                             | `auto-merge`        | No       |
+| `node-version`          | Node.js version to use                                                              | `22`                | No       |
 | `pr-labels`             | PR labels (comma-separated)                                                         | `nx-migrate-action` | No       |
 | `commit-message-prefix` | Commit message prefix                                                               | `build`             | No       |
-| `target-branch`         | Target branch for changes                                                           | `main`              | No       |
+| `target-branch`         | Target branch for PRs                                                               | `main`              | No       |
 | `working-directory`     | Working directory                                                                   | `.`                 | No       |
 | `push-migrations-json`  | Push migrations.json to repository after successful migration                       | `false`             | No       |
 | `skip-initial-install`  | Skip initial dependency installation (useful if dependencies are already installed) | `false`             | No       |
+| `create-missing-labels` | Auto-create PR labels if missing                                                    | `true`              | No       |
 | `dev-mode`              | Enable dev mode for testing (creates unique branches with matrix info)              | `false`             | No       |
 
 ## Outputs
 
-| Output              | Description                      |
-| ------------------- | -------------------------------- |
-| `updated`           | Whether Nx was updated           |
-| `current-version`   | Current Nx version before update |
-| `latest-version`    | Latest Nx version                |
-| `has-migrations`    | Whether migrations were found    |
-| `validation-result` | Result of validation tests       |
-| `pr-url`            | URL of created PR (if any)       |
+| Output            | Description                      |
+| ----------------- | -------------------------------- |
+| `updated`         | Whether Nx was updated           |
+| `current-version` | Current Nx version before update |
+| `latest-version`  | Latest Nx version                |
+| `has-migrations`  | Whether migrations were found    |
+| `pr-url`          | URL of created PR (if any)       |
 
 ## Usage Examples
 
@@ -163,7 +157,7 @@ jobs:
     package-manager: 'pnpm'
 ```
 
-### Conservative Approach (Always Create PRs)
+### Custom PR Labels and Target Branch
 
 ```yaml
 - uses: actions/setup-node@v4
@@ -174,22 +168,53 @@ jobs:
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    merge-strategy: 'always-pr'
-    validation-commands: 'build,test,lint'
+    pr-labels: 'dependencies,nx-migration,high-priority'
+    target-branch: 'develop'
 ```
 
-### Fast Auto-merge (Default Strategy)
+### Optional Auto-merge After CI Validation
+
+You can add an optional workflow to automatically merge Nx migration PRs after all CI checks pass:
 
 ```yaml
-- uses: actions/setup-node@v4
-  with:
-    node-version: '22'
-    cache: 'npm'
-- uses: gridatek/nx-migrate-action@v0
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # Uses auto-merge by default
-  # Only runs build validation by default
+# .github/workflows/auto-merge-nx-prs.yml
+name: Auto-merge Nx Migration PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  check_suite:
+    types: [completed]
+  status: {}
+
+jobs:
+  auto-merge:
+    name: Auto-merge Nx Migration PR
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.user.login == 'github-actions[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'nx-migrate-action')
+
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+
+    steps:
+      - name: Wait for CI checks
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: wait-for-checks
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          timeoutSeconds: 1800 # 30 minutes
+
+      - name: Auto-merge PR
+        if: steps.wait-for-checks.outputs.conclusion == 'success'
+        uses: pascalgn/merge-action@v0.15.6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          merge_method: squash
 ```
 
 ### Dev Mode vs Production Mode
@@ -272,7 +297,7 @@ jobs:
           dev-mode: 'true' # Creates 6 unique PRs for testing
 ```
 
-#### Production Migration
+#### Production Migration with Auto-merge
 
 ```yaml
 name: Nx Migration
@@ -296,8 +321,8 @@ jobs:
       - uses: gridatek/nx-migrate-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # dev-mode: false (default) - single clean migration
+        # Creates clean PR that will auto-merge if CI passes
+        # (requires auto-merge workflow to be added)
 ```
 
 ### Multiple Nx Packages
@@ -347,14 +372,14 @@ flowchart TD
     I --> J
     J --> K[Execute Migrations]
     K --> L[Commit Changes]
-    L --> M[Run Validation Tests]
-
-    M --> N{Validation Passed?}
-    N -->|Yes + Auto-merge| O[Push to Target Branch]
-    N -->|No or Always-PR| P[Create Pull Request]
-
-    O --> Q[End: Direct Merge]
-    P --> R[End: PR Created]
+    L --> P[Create Pull Request]
+    P --> Q{Optional Auto-merge?}
+    Q -->|Yes| R[Wait for CI Checks]
+    Q -->|No| S[End: Manual Review]
+    R --> T{All Checks Pass?}
+    T -->|Yes| U[Auto-merge PR]
+    T -->|No| V[End: Manual Review Required]
+    U --> W[End: Auto-merged]
 
     style E fill:#e1f5fe
     style F fill:#f3e5f5
@@ -370,10 +395,9 @@ flowchart TD
    - **Prod Mode**: Uses simple branch names and checks for existing branches
 3. **Migration Process**: Runs `nx migrate latest` if update is available
 4. **Code Migrations**: Executes any migrations found in `migrations.json`
-5. **Validation**: Runs specified validation commands (build, test, lint, etc.)
-6. **Smart Deployment**:
-   - ✅ **Auto-merge**: Push directly to target branch if validation passes
-   - 🔍 **Create PR**: Generate pull request for manual review if validation fails or always-pr strategy is used
+5. **PR Creation**: Always creates a pull request for review and validation by repository CI/CD
+6. **Validation**: Repository's existing CI/CD workflows handle testing, building, and validation
+7. **Optional Auto-merge**: Optional workflow can automatically merge PRs after all CI checks pass
 
 ## Workflow Strategies
 
@@ -385,12 +409,13 @@ on:
     - cron: '0 2 * * *' # Daily at 2 AM
 ```
 
-### Weekly Updates (Balanced)
+### Weekly Updates (Balanced) - Recommended with Auto-merge
 
 ```yaml
 on:
   schedule:
     - cron: '0 2 * * 1' # Monday at 2 AM
+# Best balance of staying current while allowing time for CI validation
 ```
 
 ### Monthly Updates (Conservative)
@@ -399,6 +424,7 @@ on:
 on:
   schedule:
     - cron: '0 2 1 * *' # First day of month at 2 AM
+# Minimal disruption, manual review preferred
 ```
 
 ## Permissions
@@ -416,6 +442,7 @@ permissions:
 - **Organization repositories**: May need additional setup for GitHub CLI authentication
 - **Branch protection**: The action respects branch protection rules - PRs will be created if direct push is blocked
 - **Token permissions**: Use `${{ secrets.GITHUB_TOKEN }}` which has appropriate permissions for most repositories
+- **Auto-merge workflow**: If using auto-merge, ensure the workflow has the same permissions as above
 
 ## Security Considerations
 
@@ -432,10 +459,10 @@ permissions:
 
 - This is normal when Nx is already up to date
 
-**"Validation failed"**
+**"Migration failed"**
 
-- Check the workflow logs for specific test failures
-- The action will create a PR for manual review
+- Check the workflow logs for specific migration failures
+- Ensure your Nx workspace is in a clean state before running migrations
 
 **"Permission denied"**
 
@@ -444,6 +471,12 @@ permissions:
 **"Package manager not found"**
 
 - Verify your package manager is correctly specified and available
+
+**"Auto-merge not working"**
+
+- Ensure you've added the optional auto-merge workflow (`.github/workflows/auto-merge-nx-prs.yml`)
+- Check that your repository has the required permissions for the workflow
+- Verify that your CI checks are properly configured and passing
 
 ### Debug Mode
 
@@ -473,6 +506,14 @@ Enable verbose logging:
 MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Recent Updates
+
+### Simplified Validation Strategy
+
+- **Removed built-in validation**: Action now focuses solely on migration and PR creation
+- **Repository CI integration**: Leverages existing CI/CD workflows for validation
+- **Always creates PRs**: Modern approach that uses standard GitHub review process
+- **Optional auto-merge**: Added workflow to automatically merge PRs after CI validation passes
+- **Better developer experience**: Re-runnable tests, proper CI environment, standard workflows
 
 ### Dev/Prod Mode Support
 

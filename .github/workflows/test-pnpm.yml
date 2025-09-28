@@ -106,8 +106,6 @@ jobs:
         with:
           package-manager: pnpm
           working-directory: './test-workspace'
-          validation-commands: 'build'
-          merge-strategy: 'always-pr' # Always create PR for testing
           dev-mode: 'true' # Enable dev mode for unique matrix branches
           skip-initial-install: 'true' # Skip since deps already installed in test setup
 
