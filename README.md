@@ -173,7 +173,7 @@ jobs:
 
 ### Optional Auto-merge After CI Validation
 
-You can add an optional workflow to automatically merge Nx migration PRs after all CI checks pass:
+You can add an optional workflow to automatically merge Nx migration PRs after all CI checks pass. See the demo repository for a complete example with branch protection: https://github.com/gridatek/nx-migrate-action-demo
 
 ```yaml
 # .github/workflows/auto-merge-nx-prs.yml
