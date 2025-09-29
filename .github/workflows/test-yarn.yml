@@ -101,7 +101,7 @@ jobs:
         with:
           package-manager: yarn
           working-directory: './test-workspace'
-          dev-mode: 'true' # Enable dev mode for unique matrix branches
+          branch-strategy: 'per-execution' # Enable unique matrix branches
           skip-initial-install: 'true' # Skip since deps already installed in test setup
 
       - name: Verify outputs
