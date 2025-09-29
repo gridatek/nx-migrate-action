@@ -88,18 +88,35 @@ jobs:
 
 ## Configuration Options
 
-| Input                   | Description                                                                          | Default             | Required |
-| ----------------------- | ------------------------------------------------------------------------------------ | ------------------- | -------- |
-| `nx-package`            | The Nx package to check for updates                                                  | `nx`                | No       |
-| `package-manager`       | Package manager (npm, yarn, pnpm)                                                    | `npm`               | No       |
-| `pr-labels`             | PR labels (comma-separated)                                                          | `nx-migrate-action` | No       |
-| `commit-message-prefix` | Commit message prefix                                                                | `build`             | No       |
-| `working-directory`     | Working directory                                                                    | `.`                 | No       |
-| `push-migrations-json`  | Push migrations.json to repository after successful migration                        | `false`             | No       |
-| `nx-version`            | Version to use when fetching updates (latest, next, or specific version like 19.8.0) | `latest`            | No       |
-| `create-missing-labels` | Create missing labels in the repository                                              | `true`              | No       |
-| `skip-initial-install`  | Skip initial dependency installation (useful if dependencies are already installed)  | `false`             | No       |
-| `dev-mode`              | Enable dev mode for testing (creates unique branches with matrix info)               | `false`             | No       |
+### Core Migration Settings
+
+| Input             | Description                                                                          | Default  | Required |
+| ----------------- | ------------------------------------------------------------------------------------ | -------- | -------- |
+| `nx-package`      | The Nx package to check for updates                                                  | `nx`     | No       |
+| `nx-version`      | Version to use when fetching updates (latest, next, or specific version like 19.8.0) | `latest` | No       |
+| `package-manager` | Package manager (npm, yarn, pnpm)                                                    | `npm`    | No       |
+
+### PR Configuration
+
+| Input                   | Description                 | Default             | Required |
+| ----------------------- | --------------------------- | ------------------- | -------- |
+| `pr-labels`             | PR labels (comma-separated) | `nx-migrate-action` | No       |
+| `commit-message-prefix` | Commit message prefix       | `build`             | No       |
+
+### Advanced Options
+
+| Input                   | Description                                                                         | Default | Required |
+| ----------------------- | ----------------------------------------------------------------------------------- | ------- | -------- |
+| `skip-initial-install`  | Skip initial dependency installation (useful if dependencies are already installed) | `false` | No       |
+| `push-migrations-json`  | Push migrations.json to repository after successful migration                       | `false` | No       |
+| `create-missing-labels` | Create missing labels in the repository                                             | `true`  | No       |
+
+### Dev/Testing Options
+
+| Input               | Description                                                            | Default | Required |
+| ------------------- | ---------------------------------------------------------------------- | ------- | -------- |
+| `working-directory` | Working directory                                                      | `.`     | No       |
+| `dev-mode`          | Enable dev mode for testing (creates unique branches with matrix info) | `false` | No       |
 
 ## Outputs
 
@@ -107,7 +124,7 @@ jobs:
 | ----------------- | -------------------------------- |
 | `updated`         | Whether Nx was updated           |
 | `current-version` | Current Nx version before update |
-| `latest-version`  | Latest Nx version                |
+| `target-version`  | Target Nx version for migration  |
 | `has-migrations`  | Whether migrations were found    |
 | `pr-url`          | URL of created PR (if any)       |
 
