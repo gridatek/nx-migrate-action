@@ -334,11 +334,11 @@ flowchart TD
     C -->|No| D[Exit: Already up to date]
     C -->|Yes| E{Dev Mode?}
 
-    E -->|Yes| F[Create Unique Branch<br/>with Matrix Info]
-    E -->|No| G[Check if Simple Branch<br/>Already Exists]
+    E -->|Yes| F[Create Unique Branch<br/>This Execution]
+    E -->|No| G[Check if Branch<br/>Already Exists]
 
     G -->|Exists| H[Exit: Skip Duplicate Work]
-    G -->|Not Exists| I[Create Simple Branch]
+    G -->|Not Exists| I[Create Branch]
 
     F --> J[Run Nx Migrate]
     I --> J

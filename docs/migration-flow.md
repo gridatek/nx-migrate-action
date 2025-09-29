@@ -15,11 +15,11 @@ flowchart TD
     F --> G[✅ Complete]
 
     E -->|Yes| H1{🎯 Dev Mode?}
-    H1 -->|Yes| H2[🔀 Create unique branch<br/>with matrix info]
-    H1 -->|No| H3[🔍 Check if simple<br/>branch exists]
+    H1 -->|Yes| H2[🔀 Create unique branch<br/>this execution]
+    H1 -->|No| H3[🔍 Check if branch exists]
     H3 -->|Exists| H4[⏭️ Skip: already handled]
     H4 --> G
-    H3 -->|Not exists| H5[🔀 Create simple branch]
+    H3 -->|Not exists| H5[🔀 Create branch]
     H2 --> H[📈 nx migrate]
     H5 --> H
     H --> I[🔧 Install deps]
@@ -78,9 +78,9 @@ flowchart TD
 
 - **🎯 Dev Mode?**: Check if action is running in development mode
 - **🔀 Create unique branch with matrix info**: Dev mode creates branches like `nx-migrate-21.5.3-yarn-node24-123-1`
-- **🔍 Check if simple branch exists**: Prod mode checks for existing branch `nx-migrate-21.5.3`
+- **🔍 Check if branch exists**: Prod mode checks for existing branch `nx-migrate-21.5.3`
 - **⏭️ Skip: already handled**: Exit early if branch exists to prevent duplicate work
-- **🔀 Create simple branch**: Prod mode creates clean branch name
+- **🔀 Create branch**: Prod mode creates clean branch name
 
 ### Migration Phase
 
@@ -181,7 +181,7 @@ Start → Setup → Install → Version Check → Prod Mode → Branch exists �
 | Setting                       | Result                                                                                   |
 | ----------------------------- | ---------------------------------------------------------------------------------------- |
 | `dev-mode: true`              | Creates unique branches with matrix info for testing                                     |
-| `dev-mode: false` (default)   | Creates simple branches with duplicate detection                                         |
+| `dev-mode: false` (default)   | Creates branches with duplicate detection                                                |
 | `nx-version: latest`          | Uses stable release version                                                              |
 | `nx-version: next`            | Uses pre-release version                                                                 |
 | `push-migrations-json: yes`   | migrations.json preserved in Git history                                                 |
