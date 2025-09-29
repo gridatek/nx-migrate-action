@@ -6,6 +6,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 nx-migrate-action is a GitHub Action that automatically migrates Nx workspaces to the latest version and creates PRs for review and validation. Optional auto-merge workflow available for seamless CI integration. The action is implemented as a composite action using shell scripts.
 
+## Common Development Tasks
+
+### Linting and Validation
+
+- **YAML linting**: `yamllint action.yml` (uses .yamllint.yml config with 120 char line length)
+- **Action validation**: Structural validation is done via GitHub Actions workflow test.yml
+- **Code formatting**: `npx prettier --write --ignore-unknown .` (configured via lint-staged)
+
+### Testing
+
+- **Functional testing**: Run via `.github/workflows/test.yml` with matrix testing
+- **Manual testing**: Use `dev-mode: 'true'` in action inputs to create unique test branches
+- **Local validation**: Test action changes using workflow_dispatch trigger
+
+### Git Hooks and Automation
+
+- **Husky**: Pre-commit hooks configured via `npm run prepare`
+- **Lint-staged**: Automatic formatting on commit using Prettier
+- **Git configuration**: Action uses dedicated bot credentials for automated commits
+
 ## Architecture
 
 ### Core Components
@@ -59,24 +79,30 @@ The action includes comprehensive testing via `.github/workflows/test.yml`:
 - Creates temporary Nx workspace with older version for testing upgrades
 - YAML linting via yamllint with custom configuration (.yamllint.yml)
 
-### Test Commands
+### Test Commands and Workflow
 
-No package.json scripts are configured. Testing is done via GitHub Actions workflow:
+Testing is primarily done via GitHub Actions workflow with minimal local scripts:
 
-- **YAML linting**: `yamllint action.yml` (uses .yamllint.yml config)
-- **Action validation**: Basic structural validation of action.yml
-- **Functional testing**: Matrix testing across Node.js versions (22, 24) and package managers
-- **Migration testing**: Create test workspace with older Nx version to verify migration and PR creation
+- **YAML linting**: `yamllint action.yml` (uses .yamllint.yml config with 120 char line length)
+- **Action validation**: Basic structural validation of action.yml (checks for required fields)
+- **Functional testing**: Matrix testing across Node.js versions (22, 24) and package managers (npm, yarn, pnpm)
+- **Migration testing**: Creates temporary test workspace with older Nx version to verify migration and PR creation
+- **Dev mode testing**: Use `dev-mode: 'true'` to create unique branch names for parallel matrix testing
+- **Available npm scripts**:
+  - `npm run prepare` - Initializes Husky git hooks
+  - Prettier formatting handled automatically via lint-staged on commits
 
 ## Development Guidelines
 
 ### Action Development
 
-- All logic is in action.yml as composite shell steps
-- Use proper shell scripting with error handling
-- Support multiple package managers with case statements
-- Use GitHub Actions output format: `echo "key=value" >> $GITHUB_OUTPUT`
-- Handle edge cases (no changes, missing files, validation failures)
+- **Single file architecture**: All logic is in action.yml as composite shell steps (no separate JavaScript files)
+- **Shell scripting patterns**: Use proper error handling and exit codes
+- **Package manager support**: Use `case` statements for npm/yarn/pnpm branching
+- **GitHub Actions integration**: Use `echo "key=value" >> $GITHUB_OUTPUT` format for outputs
+- **Environment variables**: Action relies on `GITHUB_TOKEN` environment variable for authentication
+- **Input validation**: Handle edge cases (no changes, missing files, validation failures)
+- **Node.js requirement**: Action requires Node.js setup (actions/setup-node@v4) before execution
 
 ### Shell Script Patterns
 
@@ -105,6 +131,25 @@ The action always creates detailed PRs with:
 
 ### Error Handling
 
-- Graceful handling of missing migrations.json
-- Fallback mechanisms for PR creation
-- Comprehensive logging throughout migration process
+- **Migration validation**: Graceful handling of missing migrations.json files
+- **PR creation fallbacks**: Multiple fallback mechanisms for PR creation failures (retry without labels, check for existing PRs)
+- **Version detection**: Validation of version strings and fallback to current version if invalid
+- **Branch management**: Automatic cleanup of existing branches in dev mode, duplicate branch detection in prod mode
+- **Comprehensive logging**: Detailed debug output throughout the migration process
+- **Permission handling**: Graceful degradation when GitHub token lacks certain permissions
+
+## Important Files and Patterns
+
+### Core Files
+
+- **action.yml**: Complete action definition (559 lines) - contains all business logic
+- **package.json**: Minimal Node.js metadata, dev dependencies for formatting (husky, prettier, lint-staged)
+- **.yamllint.yml**: YAML linting configuration with 120 character line length limit
+- **.github/workflows/test.yml**: Comprehensive testing workflow with matrix strategy
+
+### Key Input Parameters
+
+- **dev-mode**: Creates unique branches for testing vs simple production branches
+- **skip-initial-install**: Useful when dependencies are pre-installed in testing scenarios
+- **push-migrations-json**: Controls whether to keep migration files for audit trail
+- **create-missing-labels**: Automatic label creation with predefined colors and descriptions
