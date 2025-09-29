@@ -17,7 +17,7 @@ nx-migrate-action is a GitHub Action that automatically migrates Nx workspaces t
 ### Testing
 
 - **Functional testing**: Run via `.github/workflows/test.yml` with matrix testing
-- **Manual testing**: Use `dev-mode: 'true'` in action inputs to create unique test branches
+- **Manual testing**: Use `branch-strategy: 'per-execution'` in action inputs to create unique test branches
 - **Local validation**: Test action changes using workflow_dispatch trigger
 
 ### Git Hooks and Automation
@@ -75,7 +75,8 @@ The action follows this sequence:
 ### Dev/Testing Options
 
 - `working-directory`: Working directory for the action (default: .)
-- `dev-mode`: Enable dev mode for testing with unique branches (default: false)
+- `verbose`: Enable verbose logging output (default: false)
+- `branch-strategy`: Branch strategy: "per-version" or "per-execution" (default: per-version)
 
 ## Testing
 
@@ -95,7 +96,7 @@ Testing is primarily done via GitHub Actions workflow with minimal local scripts
 - **Action validation**: Basic structural validation of action.yml (checks for required fields)
 - **Functional testing**: Matrix testing across Node.js versions (22, 24) and package managers (npm, yarn, pnpm)
 - **Migration testing**: Creates temporary test workspace with older Nx version to verify migration and PR creation
-- **Dev mode testing**: Use `dev-mode: 'true'` to create unique branch names for parallel matrix testing
+- **Per-execution testing**: Use `branch-strategy: 'per-execution'` to create unique branch names for parallel matrix testing
 - **Available npm scripts**:
   - `npm run prepare` - Initializes Husky git hooks
   - Prettier formatting handled automatically via lint-staged on commits
@@ -157,7 +158,7 @@ The action always creates detailed PRs with:
 
 ### Key Input Parameters
 
-- **dev-mode**: Creates unique branches for testing vs simple production branches
+- **branch-strategy**: Controls branch naming - "per-version" for production, "per-execution" for testing
 - **skip-initial-install**: Useful when dependencies are pre-installed in testing scenarios
 - **push-migrations-json**: Controls whether to keep migration files for audit trail
 - **create-missing-labels**: Automatic label creation with predefined colors and descriptions

@@ -13,9 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Repository CI integration**: Leverages existing CI/CD workflows for validation
 - **Optional auto-merge workflow**: New workflow to automatically merge PRs after CI validation passes
 - **Modern workflow approach**: Standard GitHub review process with re-runnable tests
-- **Dev/Prod Mode Support**: New `dev-mode` input for different workflow strategies
-  - **Dev Mode**: Creates unique branches with matrix info for comprehensive testing
-  - **Prod Mode** (default): Simple branch names with duplicate detection
+- **Branch Strategy Support**: New `branch-strategy` input for different workflow strategies
+  - **Per-execution**: Creates unique branches with matrix info for comprehensive testing
+  - **Per-version** (default): Simple branch names with duplicate detection
 - **Enhanced yarn version detection**: Improved reliability and proper version parsing
 - **Matrix-aware branching**: Automatic matrix variable inclusion in branch names
 - **Branch existence checking**: Prevents duplicate migration work in production mode
