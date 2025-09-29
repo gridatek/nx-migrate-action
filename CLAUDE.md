@@ -55,18 +55,27 @@ The action follows this sequence:
 
 ## Configuration
 
-### Essential Inputs
+### Core Migration Settings
 
 - `nx-package`: Target package to migrate (default: nx)
-- `package-manager`: npm/yarn/pnpm (default: npm)
-- `node-version`: Node.js version to use (default: 22)
 - `nx-version`: Version tag for updates - latest, next, or specific version like 19.8.0 (default: latest)
+- `package-manager`: npm/yarn/pnpm (default: npm)
 
 ### PR Configuration
 
 - `pr-labels`: Labels to add to PRs (default: nx-migrate-action)
+- `commit-message-prefix`: Prefix for commit messages (default: build)
+
+### Advanced Options
+
+- `skip-initial-install`: Skip initial dependency installation (default: false)
 - `push-migrations-json`: Keep migrations.json for audit trail (default: false)
 - `create-missing-labels`: Auto-create PR labels if missing (default: true)
+
+### Dev/Testing Options
+
+- `working-directory`: Working directory for the action (default: .)
+- `dev-mode`: Enable dev mode for testing with unique branches (default: false)
 
 ## Testing
 

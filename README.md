@@ -83,7 +83,6 @@ jobs:
         with:
           package-manager: 'pnpm'
           pr-labels: 'dependencies,nx-migration,high-priority'
-          target-branch: 'develop'
 ```
 
 ## Configuration Options
@@ -346,13 +345,7 @@ flowchart TD
     J --> K[Execute Migrations]
     K --> L[Commit Changes]
     L --> P[Create Pull Request]
-    P --> Q{Optional Auto-merge?}
-    Q -->|Yes| R[Wait for CI Checks]
-    Q -->|No| S[End: Manual Review]
-    R --> T{All Checks Pass?}
-    T -->|Yes| U[Auto-merge PR]
-    T -->|No| V[End: Manual Review Required]
-    U --> W[End: Auto-merged]
+    P --> S[End: PR Created for Review]
 
     style E fill:#e1f5fe
     style F fill:#f3e5f5
@@ -362,15 +355,14 @@ flowchart TD
 
 ### Workflow Steps
 
-1. **Version Detection**: Compares current Nx version with latest available using package manager commands
+1. **Version Detection**: Compares current Nx version with target version using package manager commands
 2. **Mode Selection**:
    - **Dev Mode**: Creates unique branches with matrix information for testing
    - **Prod Mode**: Uses simple branch names and checks for existing branches
-3. **Migration Process**: Runs `nx migrate latest` if update is available
+3. **Migration Process**: Runs `nx migrate` with specified version if update is available
 4. **Code Migrations**: Executes any migrations found in `migrations.json`
-5. **PR Creation**: Always creates a pull request for review and validation by repository CI/CD
+5. **PR Creation**: Always creates a pull request targeting the current workflow branch for review and validation by repository CI/CD
 6. **Validation**: Repository's existing CI/CD workflows handle testing, building, and validation
-7. **Optional Auto-merge**: Optional workflow can automatically merge PRs after all CI checks pass
 
 ## Workflow Strategies
 

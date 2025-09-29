@@ -104,20 +104,12 @@ flowchart TD
 
 ### PR Creation Phase
 
-- **📝 Create PR**: Always create pull request with detailed migration information for review and validation by repository CI/CD
-
-### Optional Auto-merge Phase
-
-- **🤖 Monitor CI**: Optional workflow monitors PR status and waits for all CI checks to complete
-- **🔍 Check status**: Verifies all required checks have passed successfully
-- **🚀 Auto-merge**: Automatically merges PR when all validations pass, or leaves for manual review if any fail
+- **📝 Create PR**: Always create pull request targeting the current workflow branch with detailed migration information for review and validation by repository CI/CD
 
 ### Completion
 
 - **✅ Complete**: Action finished - no changes needed
 - **✅ PR Created**: Pull request created for review and validation by repository CI/CD
-- **🤖 Auto-merged**: PR automatically merged after successful CI validation (if auto-merge workflow enabled)
-- **👀 Manual Review**: PR awaiting manual review (auto-merge disabled or CI checks failed)
 - **💥 Exit**: Action failed due to migration errors
 
 ## 🎯 Key Decision Points
@@ -144,12 +136,7 @@ flowchart TD
 
 ### 5. **PR Creation Strategy**
 
-- **Always creates PRs**: All successful migrations result in PR creation for proper review and CI validation
-
-### 6. **Auto-merge Strategy (Optional)**
-
-- **Enabled**: Separate workflow monitors PR and auto-merges when all CI checks pass
-- **Disabled**: All PRs require manual review and merging
+- **Always creates PRs**: All successful migrations result in PR creation targeting the current workflow branch for proper review and CI validation
 
 ## 📝 Example Scenarios
 
@@ -177,25 +164,13 @@ Start → Setup → Install → Version Check → Migrate → Commit migrations.
 Start → Setup → Install → Version Check → Migrate → Migration fails ❌ → Action fails
 ```
 
-### Scenario F: Auto-merge Success
-
-```
-Start → Setup → Install → Version Check → Migrate → Run Migrations → Create PR → CI Validation ✅ → Auto-merge ✅
-```
-
-### Scenario G: Auto-merge CI Failure
-
-```
-Start → Setup → Install → Version Check → Migrate → Run Migrations → Create PR → CI Validation ❌ → Manual Review Required
-```
-
-### Scenario H: Dev Mode Matrix Testing
+### Scenario F: Dev Mode Matrix Testing
 
 ```
 Start → Setup → Install → Version Check → Dev Mode → Create unique branch (matrix-info) → Migrate → Create PR
 ```
 
-### Scenario I: Prod Mode Duplicate Prevention
+### Scenario G: Prod Mode Duplicate Prevention
 
 ```
 Start → Setup → Install → Version Check → Prod Mode → Branch exists → Skip (no duplicate work)
@@ -203,17 +178,15 @@ Start → Setup → Install → Version Check → Prod Mode → Branch exists �
 
 ## 🔧 Configuration Impact
 
-| Setting                       | Result                                                 |
-| ----------------------------- | ------------------------------------------------------ |
-| `dev-mode: true`              | Creates unique branches with matrix info for testing   |
-| `dev-mode: false` (default)   | Creates simple branches with duplicate detection       |
-| `nx-version-tag: latest`      | Uses stable release version                            |
-| `nx-version-tag: canary/next` | Uses pre-release version                               |
-| `push-migrations-json: yes`   | migrations.json preserved in Git history               |
-| `push-migrations-json: false` | migrations.json removed after successful migration     |
-| Always creates PRs            | All migrations create PRs for repository CI validation |
-| Auto-merge workflow enabled   | PRs auto-merge when all CI checks pass                 |
-| Auto-merge workflow disabled  | All PRs require manual review and merging              |
+| Setting                       | Result                                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------- |
+| `dev-mode: true`              | Creates unique branches with matrix info for testing                                     |
+| `dev-mode: false` (default)   | Creates simple branches with duplicate detection                                         |
+| `nx-version: latest`          | Uses stable release version                                                              |
+| `nx-version: next`            | Uses pre-release version                                                                 |
+| `push-migrations-json: yes`   | migrations.json preserved in Git history                                                 |
+| `push-migrations-json: false` | migrations.json removed after successful migration                                       |
+| Always creates PRs            | All migrations create PRs targeting current workflow branch for repository CI validation |
 
 ## 🎨 Legend
 
