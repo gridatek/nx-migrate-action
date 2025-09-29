@@ -111,12 +111,14 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        echo "Using nx-version: ${{ inputs.nx-version }}"
-        echo "Package to check: ${{ inputs.nx-package }}"
+        if [[ "${{ inputs.dev-mode }}" == "true" ]]; then
+          echo "Using nx-version: ${{ inputs.nx-version }}"
+          echo "Package to check: ${{ inputs.nx-package }}"
 
-        # Show available dist-tags for debugging
-        echo "Available dist-tags:"
-        npm view ${{ inputs.nx-package }} dist-tags --json
+          # Show available dist-tags for debugging
+          echo "Available dist-tags:"
+          npm view ${{ inputs.nx-package }} dist-tags --json
+        fi
 
         case "${{ inputs.package-manager }}" in
           npm)
@@ -128,9 +130,13 @@ runs:
             CURRENT_VERSION=$(yarn list --pattern "${{ inputs.nx-package }}" --depth=0 2>/dev/null | grep -E "^[^@]*@[0-9]" | sed 's/.*@//' | head -1)
 
             # Get latest version using yarn info
-            echo "Getting latest version with: yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version }} --json"
+            if [[ "${{ inputs.dev-mode }}" == "true" ]]; then
+              echo "Getting latest version with: yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version }} --json"
+            fi
             YARN_INFO_JSON=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version }} --json 2>/dev/null)
-            echo "Raw yarn info output: '${YARN_INFO_JSON}'"
+            if [[ "${{ inputs.dev-mode }}" == "true" ]]; then
+              echo "Raw yarn info output: '${YARN_INFO_JSON}'"
+            fi
 
             # Extract version from JSON using jq
             if command -v jq >/dev/null 2>&1; then
@@ -145,13 +151,19 @@ runs:
               fi
             fi
 
-            echo "Extracted latest version: '${TARGET_VERSION}'"
+            if [[ "${{ inputs.dev-mode }}" == "true" ]]; then
+              echo "Extracted latest version: '${TARGET_VERSION}'"
+            fi
 
             # If still empty, try simpler approach
             if [[ -z "$TARGET_VERSION" ]]; then
-              echo "Fallback: trying yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version }} version"
+              if [[ "${{ inputs.dev-mode }}" == "true" ]]; then
+                echo "Fallback: trying yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version }} version"
+              fi
               TARGET_VERSION=$(yarn info ${{ inputs.nx-package }}@${{ inputs.nx-version }} version 2>/dev/null | tail -1 | grep -E '^[0-9]+\.[0-9]+\.[0-9]+')
-              echo "Fallback version: '${TARGET_VERSION}'"
+              if [[ "${{ inputs.dev-mode }}" == "true" ]]; then
+                echo "Fallback version: '${TARGET_VERSION}'"
+              fi
             fi
             ;;
           pnpm)
@@ -163,14 +175,18 @@ runs:
 
         # Validate that TARGET_VERSION is a proper version number (supports pre-release versions)
         if [[ ! "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-          echo "⚠️ Warning: Invalid version detected: '$TARGET_VERSION'"
-          echo "Setting TARGET_VERSION to CURRENT_VERSION to avoid issues"
+          if [[ "${{ inputs.dev-mode }}" == "true" ]]; then
+            echo "⚠️ Warning: Invalid version detected: '$TARGET_VERSION'"
+            echo "Setting TARGET_VERSION to CURRENT_VERSION to avoid issues"
+          fi
           TARGET_VERSION="$CURRENT_VERSION"
         fi
 
-        echo "Final version resolution:"
-        echo "  Current: $CURRENT_VERSION"
-        echo "  Latest:  $TARGET_VERSION"
+        if [[ "${{ inputs.dev-mode }}" == "true" ]]; then
+          echo "Final version resolution:"
+          echo "  Current: $CURRENT_VERSION"
+          echo "  Latest:  $TARGET_VERSION"
+        fi
 
         if [[ "$CURRENT_VERSION" != "$TARGET_VERSION" && -n "$TARGET_VERSION" && -n "$CURRENT_VERSION" ]]; then
           echo "Current version: $CURRENT_VERSION"
@@ -353,10 +369,10 @@ runs:
           echo "Branch ${BRANCH} does not exist, proceeding with migration."
         fi
 
-        echo "=== PR Creation Debug Info ==="
-        echo "Dev mode: ${DEV_MODE}"
-        echo "Latest version: ${TARGET_VERSION}"
         if [ "$DEV_MODE" = "true" ]; then
+          echo "=== PR Creation Debug Info ==="
+          echo "Dev mode: ${DEV_MODE}"
+          echo "Latest version: ${TARGET_VERSION}"
           echo "Matrix JSON: ${MATRIX_JSON}"
           echo "Matrix values: ${MATRIX_VALUES}"
           echo "Clean matrix: ${CLEAN_MATRIX}"
@@ -364,10 +380,10 @@ runs:
           echo "Clean Job ID: ${CLEAN_JOB_ID}"
           echo "Run ID: ${RUN_ID}"
           echo "Run attempt: ${RUN_ATTEMPT}"
+          echo "Branch name: ${BRANCH}"
+          echo "Working directory: $(pwd)"
+          echo "Git status: $(git status --short)"
         fi
-        echo "Branch name: ${BRANCH}"
-        echo "Working directory: $(pwd)"
-        echo "Git status: $(git status --short)"
 
         # Set PR reason for always creating PRs
         PR_REASON="Ready for review and CI validation"
@@ -436,22 +452,26 @@ runs:
         *This PR was created automatically by the [nx-migrate action](https://github.com/gridatek/nx-migrate-action)*"
 
         # Create PR
-        echo "=== Creating PR ==="
-        echo "Title: ${PR_TITLE}"
-        echo "Base branch: ${{ inputs.target-branch }}"
-        echo "Head branch: ${BRANCH}"
-        echo "Labels: ${LABELS}"
-        echo "GitHub token present: $([[ -n "$GITHUB_TOKEN" ]] && echo 'Yes' || echo 'No')"
-        echo "PR body length: ${#PR_BODY} characters"
+        if [ "$DEV_MODE" = "true" ]; then
+          echo "=== Creating PR ==="
+          echo "Title: ${PR_TITLE}"
+          echo "Base branch: ${{ github.ref_name }}"
+          echo "Head branch: ${BRANCH}"
+          echo "Labels: ${LABELS}"
+          echo "GitHub token present: $([[ -n "$GITHUB_TOKEN" ]] && echo 'Yes' || echo 'No')"
+          echo "PR body length: ${#PR_BODY} characters"
 
-        # Check if this is an org repo and what permissions we have
-        echo "Repository info:"
-        gh repo view --json owner,name,isOrganization || echo "Failed to get repo info"
-        echo "Token permissions:"
-        gh auth status || echo "Auth check failed"
+          # Check if this is an org repo and what permissions we have
+          echo "Repository info:"
+          gh repo view --json owner,name,isOrganization || echo "Failed to get repo info"
+          echo "Token permissions:"
+          gh auth status || echo "Auth check failed"
+        fi
 
         # Create PR with explicit error handling
-        echo "Executing: gh pr create..."
+        if [ "$DEV_MODE" = "true" ]; then
+          echo "Executing: gh pr create..."
+        fi
         set +e  # Don't exit on error
 
         # Try to create PR with labels first
@@ -469,21 +489,39 @@ runs:
 
           # Create missing labels if enabled
           if [[ "${{ inputs.create-missing-labels }}" == "true" ]]; then
-            echo "🏷️ Creating missing labels..."
+            if [ "$DEV_MODE" = "true" ]; then
+              echo "🏷️ Creating missing labels..."
+            fi
             IFS=' ' read -ra LABEL_ARRAY <<< "${LABELS}"
             for label in "${LABEL_ARRAY[@]}"; do
               case "$label" in
                 "dependencies")
-                  gh label create "$label" --description "Pull requests that update dependencies" --color "0366d6" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  if [ "$DEV_MODE" = "true" ]; then
+                    gh label create "$label" --description "Pull requests that update dependencies" --color "0366d6" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  else
+                    gh label create "$label" --description "Pull requests that update dependencies" --color "0366d6" 2>/dev/null
+                  fi
                   ;;
                 "nx-migration")
-                  gh label create "$label" --description "Automated Nx workspace migrations" --color "7057ff" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  if [ "$DEV_MODE" = "true" ]; then
+                    gh label create "$label" --description "Automated Nx workspace migrations" --color "7057ff" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  else
+                    gh label create "$label" --description "Automated Nx workspace migrations" --color "7057ff" 2>/dev/null
+                  fi
                   ;;
                 "automated")
-                  gh label create "$label" --description "Automated changes by GitHub Actions" --color "ededed" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  if [ "$DEV_MODE" = "true" ]; then
+                    gh label create "$label" --description "Automated changes by GitHub Actions" --color "ededed" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  else
+                    gh label create "$label" --description "Automated changes by GitHub Actions" --color "ededed" 2>/dev/null
+                  fi
                   ;;
                 *)
-                  gh label create "$label" --description "Auto-created by nx-migrate action" --color "f9d0c4" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  if [ "$DEV_MODE" = "true" ]; then
+                    gh label create "$label" --description "Auto-created by nx-migrate action" --color "f9d0c4" 2>/dev/null && echo "  ✅ Created label: $label" || echo "  ℹ️ Label already exists: $label"
+                  else
+                    gh label create "$label" --description "Auto-created by nx-migrate action" --color "f9d0c4" 2>/dev/null
+                  fi
                   ;;
               esac
             done
@@ -510,10 +548,16 @@ runs:
 
             # Try to add labels individually after PR creation
             if [[ $PR_EXIT_CODE -eq 0 ]]; then
-              echo "✅ PR created without labels, attempting to add labels individually..."
+              if [ "$DEV_MODE" = "true" ]; then
+                echo "✅ PR created without labels, attempting to add labels individually..."
+              fi
               IFS=' ' read -ra LABEL_ARRAY <<< "${LABELS}"
               for label in "${LABEL_ARRAY[@]}"; do
-                gh pr edit ${BRANCH} --add-label "$label" 2>/dev/null && echo "  ✅ Added label: $label" || echo "  ⚠️ Failed to add label: $label"
+                if [ "$DEV_MODE" = "true" ]; then
+                  gh pr edit ${BRANCH} --add-label "$label" 2>/dev/null && echo "  ✅ Added label: $label" || echo "  ⚠️ Failed to add label: $label"
+                else
+                  gh pr edit ${BRANCH} --add-label "$label" 2>/dev/null
+                fi
               done
             fi
           fi
@@ -521,34 +565,44 @@ runs:
 
         set -e  # Re-enable exit on error
 
-        echo "PR creation exit code: ${PR_EXIT_CODE}"
-        echo "PR creation output: ${PR_URL}"
+        if [ "$DEV_MODE" = "true" ]; then
+          echo "PR creation exit code: ${PR_EXIT_CODE}"
+          echo "PR creation output: ${PR_URL}"
+        fi
 
         if [[ $PR_EXIT_CODE -eq 0 && -n "$PR_URL" ]]; then
           echo "pr-url=$PR_URL" >> $GITHUB_OUTPUT
           echo "✅ PR created successfully: $PR_URL"
         else
-          echo "❌ PR creation failed"
-          echo "Exit code: ${PR_EXIT_CODE}"
-          echo "Output: ${PR_URL}"
+          if [ "$DEV_MODE" = "true" ]; then
+            echo "❌ PR creation failed"
+            echo "Exit code: ${PR_EXIT_CODE}"
+            echo "Output: ${PR_URL}"
+          fi
 
           # Try to get existing PR URL as fallback
-          echo "Checking for existing PR..."
+          if [ "$DEV_MODE" = "true" ]; then
+            echo "Checking for existing PR..."
+          fi
           EXISTING_PR=$(gh pr view ${BRANCH} --json url --jq '.url' 2>/dev/null || echo "")
           if [[ -n "$EXISTING_PR" ]]; then
             echo "pr-url=$EXISTING_PR" >> $GITHUB_OUTPUT
             echo "ℹ️ PR already exists: $EXISTING_PR"
-            echo "✅ Using existing PR instead of creating new one"
+            if [ "$DEV_MODE" = "true" ]; then
+              echo "✅ Using existing PR instead of creating new one"
+            fi
           else
-            echo "No existing PR found"
-            # Additional debugging
-            echo "=== Debugging Info ==="
-            echo "Current branch: $(git branch --show-current)"
-            echo "Remote branches: $(git branch -r | head -5)"
-            echo "GitHub CLI auth status:"
-            gh auth status || echo "GitHub CLI auth failed"
-            echo "Repository info:"
-            gh repo view --json name,owner,defaultBranch || echo "Failed to get repo info"
+            if [ "$DEV_MODE" = "true" ]; then
+              echo "No existing PR found"
+              # Additional debugging
+              echo "=== Debugging Info ==="
+              echo "Current branch: $(git branch --show-current)"
+              echo "Remote branches: $(git branch -r | head -5)"
+              echo "GitHub CLI auth status:"
+              gh auth status || echo "GitHub CLI auth failed"
+              echo "Repository info:"
+              gh repo view --json name,owner,defaultBranch || echo "Failed to get repo info"
+            fi
 
             # Exit with error if we can't create or find a PR
             echo "❌ Failed to create PR and no existing PR found"
