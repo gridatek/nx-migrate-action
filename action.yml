@@ -66,9 +66,9 @@ outputs:
     description: 'Current Nx version before update'
     value: ${{ steps.check-update.outputs.current-version }}
 
-  latest-version:
-    description: 'Latest Nx version'
-    value: ${{ steps.check-update.outputs.latest-version }}
+  target-version:
+    description: 'Target Nx version for migration'
+    value: ${{ steps.check-update.outputs.target-version }}
 
   has-migrations:
     description: 'Whether migrations were found'
@@ -173,12 +173,12 @@ runs:
           echo "Latest version: $LATEST_VERSION"
           echo "updated=true" >> $GITHUB_OUTPUT
           echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          echo "latest-version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "target-version=$LATEST_VERSION" >> $GITHUB_OUTPUT
         else
           echo "Already up to date: $CURRENT_VERSION"
           echo "updated=false" >> $GITHUB_OUTPUT
           echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          echo "latest-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "target-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         fi
 
     - name: Update Nx
@@ -186,7 +186,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        echo "Updating Nx from ${{ steps.check-update.outputs.current-version }} to ${{ steps.check-update.outputs.latest-version }}"
+        echo "Updating Nx from ${{ steps.check-update.outputs.current-version }} to ${{ steps.check-update.outputs.target-version }}"
         npx nx migrate ${{ inputs.nx-version }}
 
     - name: Install dependencies after migration
@@ -260,7 +260,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
+        LATEST_VERSION="${{ steps.check-update.outputs.target-version }}"
         git add .
         if [[ $(git status --porcelain) ]]; then
           git commit -m "${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}" \
@@ -298,7 +298,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        LATEST_VERSION="${{ steps.check-update.outputs.latest-version }}"
+        LATEST_VERSION="${{ steps.check-update.outputs.target-version }}"
         DEV_MODE="${{ inputs.dev-mode }}"
 
         echo "Dev mode: ${DEV_MODE}"

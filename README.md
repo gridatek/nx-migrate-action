@@ -107,7 +107,7 @@ jobs:
 | ----------------- | -------------------------------- |
 | `updated`         | Whether Nx was updated           |
 | `current-version` | Current Nx version before update |
-| `latest-version`  | Latest Nx version                |
+| `target-version`  | Target Nx version for migration  |
 | `has-migrations`  | Whether migrations were found    |
 | `pr-url`          | URL of created PR (if any)       |
 
