@@ -175,47 +175,6 @@ jobs:
 
 You can add an optional workflow to automatically merge Nx migration PRs after all CI checks pass. See the demo repository for a complete example with branch protection: https://github.com/gridatek/nx-migrate-action-demo
 
-```yaml
-# .github/workflows/auto-merge-nx-prs.yml
-name: Auto-merge Nx Migrate PRs
-
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  check_suite:
-    types: [completed]
-  status: {}
-
-jobs:
-  auto-merge:
-    name: Auto-merge Nx Migrate PR
-    runs-on: ubuntu-latest
-    if: |
-      github.event.pull_request.user.login == 'github-actions[bot]' &&
-      contains(github.event.pull_request.labels.*.name, 'nx-migrate-action')
-
-    permissions:
-      contents: write
-      pull-requests: write
-      checks: read
-
-    steps:
-      - name: Wait for CI checks
-        uses: fountainhead/action-wait-for-check@v1.2.0
-        id: wait-for-checks
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.pull_request.head.sha }}
-          timeoutSeconds: 1800 # 30 minutes
-
-      - name: Auto-merge PR
-        if: steps.wait-for-checks.outputs.conclusion == 'success'
-        uses: pascalgn/merge-action@v0.15.6
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          merge_method: squash
-```
-
 ### Dev Mode vs Production Mode
 
 The action supports two modes to handle different use cases:
