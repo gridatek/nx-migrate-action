@@ -39,8 +39,9 @@ jobs:
 
             ```yaml
             - uses: gridatek/nx-migrate-action@v${{ steps.version.outputs.version }}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
-                github-token: ${{ secrets.GITHUB_TOKEN }}
                 package-manager: npm  # or yarn, pnpm
             ```
 
