@@ -60,12 +60,11 @@ The action follows this sequence:
 - `nx-package`: Target package to migrate (default: nx)
 - `package-manager`: npm/yarn/pnpm (default: npm)
 - `node-version`: Node.js version to use (default: 22)
-- `nx-version-tag`: Version tag for updates - latest, beta, canary, next (default: latest)
+- `nx-version`: Version tag for updates - latest, beta, canary, next (default: latest)
 
 ### PR Configuration
 
 - `pr-labels`: Labels to add to PRs (default: nx-migrate-action)
-- `target-branch`: Target branch for PRs (default: main)
 - `push-migrations-json`: Keep migrations.json for audit trail (default: false)
 - `create-missing-labels`: Auto-create PR labels if missing (default: true)
 

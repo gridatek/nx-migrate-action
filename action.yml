@@ -27,11 +27,6 @@ inputs:
     required: false
     default: 'build'
 
-  target-branch:
-    description: 'Target branch for merging changes'
-    required: false
-    default: 'main'
-
   working-directory:
     description: 'Working directory for the action'
     required: false
@@ -460,7 +455,7 @@ runs:
           --title "${PR_TITLE}" \
           --body "${PR_BODY}" \
           --label "${LABELS}" \
-          --base ${{ inputs.target-branch }} \
+          --base ${{ github.ref_name }} \
           --head ${BRANCH} 2>&1)
         PR_EXIT_CODE=$?
 
@@ -495,7 +490,7 @@ runs:
             --title "${PR_TITLE}" \
             --body "${PR_BODY}" \
             --label "${LABELS}" \
-            --base ${{ inputs.target-branch }} \
+            --base ${{ github.ref_name }} \
             --head ${BRANCH} 2>&1)
           PR_EXIT_CODE=$?
 
@@ -505,7 +500,7 @@ runs:
             PR_URL=$(gh pr create \
               --title "${PR_TITLE}" \
               --body "${PR_BODY}" \
-              --base ${{ inputs.target-branch }} \
+              --base ${{ github.ref_name }} \
               --head ${BRANCH} 2>&1)
             PR_EXIT_CODE=$?
 

@@ -94,7 +94,6 @@ jobs:
 | `package-manager`       | Package manager (npm, yarn, pnpm)                                                    | `npm`               | No       |
 | `pr-labels`             | PR labels (comma-separated)                                                          | `nx-migrate-action` | No       |
 | `commit-message-prefix` | Commit message prefix                                                                | `build`             | No       |
-| `target-branch`         | Target branch for PRs                                                                | `main`              | No       |
 | `working-directory`     | Working directory                                                                    | `.`                 | No       |
 | `push-migrations-json`  | Push migrations.json to repository after successful migration                        | `false`             | No       |
 | `nx-version`            | Version to use when fetching updates (latest, next, or specific version like 19.8.0) | `latest`            | No       |
@@ -156,7 +155,7 @@ jobs:
     package-manager: 'pnpm'
 ```
 
-### Custom PR Labels and Target Branch
+### Custom PR Labels
 
 ```yaml
 - uses: actions/setup-node@v4
@@ -168,7 +167,6 @@ jobs:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
     pr-labels: 'dependencies,nx-migration,high-priority'
-    target-branch: 'develop'
 ```
 
 ### Optional Auto-merge After CI Validation
