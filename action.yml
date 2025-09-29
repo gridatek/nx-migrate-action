@@ -7,16 +7,23 @@ branding:
   color: 'blue'
 
 inputs:
+  # Core Migration Settings
   nx-package:
     description: 'The Nx package to check for updates'
     required: false
     default: 'nx'
+
+  nx-version:
+    description: 'Version to use when fetching updates (latest, next, or specific version like 19.8.0)'
+    required: false
+    default: 'latest'
 
   package-manager:
     description: 'Package manager to use (npm, yarn, pnpm)'
     required: false
     default: 'npm'
 
+  # PR Configuration
   pr-labels:
     description: 'Labels to add to PRs (comma-separated)'
     required: false
@@ -27,30 +34,27 @@ inputs:
     required: false
     default: 'build'
 
-  working-directory:
-    description: 'Working directory for the action'
+  # Advanced Options
+  skip-initial-install:
+    description: 'Skip initial dependency installation (useful if dependencies are already installed)'
     required: false
-    default: '.'
+    default: 'false'
 
   push-migrations-json:
     description: 'Push migrations.json to repository after successful migration'
     required: false
     default: 'false'
 
-  nx-version:
-    description: 'Version to use when fetching updates (latest, next, or specific version like 19.8.0)'
-    required: false
-    default: 'latest'
-
   create-missing-labels:
     description: 'Create missing labels in the repository'
     required: false
     default: 'true'
 
-  skip-initial-install:
-    description: 'Skip initial dependency installation (useful if dependencies are already installed)'
+  # Dev/Testing Options
+  working-directory:
+    description: 'Working directory for the action'
     required: false
-    default: 'false'
+    default: '.'
 
   dev-mode:
     description: 'Enable dev mode for testing (creates unique branches with matrix info)'
