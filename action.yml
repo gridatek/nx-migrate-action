@@ -435,18 +435,8 @@ runs:
         # Convert labels to space-separated format for gh cli
         LABELS=$(echo "${{ inputs.pr-labels }}" | tr ',' ' ')
 
-        # Create PR title and body - handle branch strategy
-        if [ "$BRANCH_STRATEGY" = "per-execution" ]; then
-          # Per-execution: include matrix info for identification
-          if [ -n "$CLEAN_MATRIX" ]; then
-            PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${TARGET_VERSION} (${CLEAN_MATRIX})"
-          else
-            PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${TARGET_VERSION} (${CLEAN_JOB_ID})"
-          fi
-        else
-          # Per-version: simple title
-          PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${TARGET_VERSION}"
-        fi
+        # Create PR title - always clean and focused on the actual change
+        PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${TARGET_VERSION}"
 
         PR_BODY="## 🚀 Nx Migrate Update
 
