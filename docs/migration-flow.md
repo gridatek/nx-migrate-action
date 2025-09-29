@@ -15,7 +15,7 @@ flowchart TD
     F --> G[✅ Complete]
 
     E -->|Yes| H1{🎯 Dev Mode?}
-    H1 -->|Yes| H2[🔀 Create unique branch<br/>this execution]
+    H1 -->|Yes| H2[🔀 Create unique branch<br/>for this execution]
     H1 -->|No| H3[🔍 Check if branch exists]
     H3 -->|Exists| H4[⏭️ Skip: already handled]
     H4 --> G

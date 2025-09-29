@@ -334,7 +334,7 @@ flowchart TD
     C -->|No| D[Exit: Already up to date]
     C -->|Yes| E{Dev Mode?}
 
-    E -->|Yes| F[Create Unique Branch<br/>This Execution]
+    E -->|Yes| F[Create Unique Branch<br/>for This Execution]
     E -->|No| G[Check if Branch<br/>Already Exists]
 
     G -->|Exists| H[Exit: Skip Duplicate Work]
