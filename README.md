@@ -333,10 +333,10 @@ flowchart TD
     A[Start Action] --> B[Check for Nx Updates]
     B --> C{Update Available?}
     C -->|No| D[Exit: Already up to date]
-    C -->|Yes| E{Dev Mode?}
+    C -->|Yes| E{Branch Strategy?}
 
-    E -->|Yes| F[Create Unique Branch<br/>for This Execution]
-    E -->|No| G[Check if Branch<br/>Already Exists]
+    E -->|per-execution| F[Create Unique Branch<br/>for This Execution]
+    E -->|per-version| G[Check if Branch<br/>Already Exists]
 
     G -->|Exists| H[Exit: Skip Duplicate Work]
     G -->|Not Exists| I[Create Branch]
@@ -358,8 +358,8 @@ flowchart TD
 
 1. **Version Detection**: Compares current Nx version with target version using package manager commands
 2. **Mode Selection**:
-   - **Dev Mode**: Creates unique branches with matrix information for testing
-   - **Prod Mode**: Uses simple branch names and checks for existing branches
+   - **Per-execution strategy**: Creates unique branches with matrix information for testing
+   - **Per-version strategy**: Uses simple branch names and checks for existing branches
 3. **Migration Process**: Runs `nx migrate` with specified version if update is available
 4. **Code Migrations**: Executes any migrations found in `migrations.json`
 5. **PR Creation**: Always creates a pull request targeting the current workflow branch for review and validation by repository CI/CD

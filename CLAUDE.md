@@ -143,7 +143,7 @@ The action always creates detailed PRs with:
 - **Migration validation**: Graceful handling of missing migrations.json files
 - **PR creation fallbacks**: Multiple fallback mechanisms for PR creation failures (retry without labels, check for existing PRs)
 - **Version detection**: Validation of version strings and fallback to current version if invalid
-- **Branch management**: Automatic cleanup of existing branches in dev mode, duplicate branch detection in prod mode
+- **Branch management**: Automatic cleanup of existing branches in per-execution strategy, duplicate branch detection in per-version strategy
 - **Comprehensive logging**: Detailed debug output throughout the migration process
 - **Permission handling**: Graceful degradation when GitHub token lacks certain permissions
 
