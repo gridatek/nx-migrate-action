@@ -1,4 +1,4 @@
-name: Clean Up Nx Migration PRs
+name: Clean Up Nx Migrate PRs
 
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ on:
 
 jobs:
   cleanup-prs:
-    name: Clean Up Nx Migration PRs
+    name: Clean Up Nx Migrate PRs
     runs-on: ubuntu-latest
 
     permissions:
@@ -60,7 +60,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "=== Nx Migration PR Cleanup ==="
+          echo "=== Nx Migrate PR Cleanup ==="
           echo "Action: $ACTION"
           echo "Filter: $PR_FILTER"
           echo "Dry run: $DRY_RUN"

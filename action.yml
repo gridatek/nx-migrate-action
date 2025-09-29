@@ -1,4 +1,4 @@
-name: 'Nx Migration'
+name: 'Nx Migrate Action'
 description: 'Automatically migrate Nx workspace to the latest version and create PRs for review and validation. Optional auto-merge workflow available.'
 author: 'Khalil LAGRIDA'
 
@@ -416,7 +416,7 @@ runs:
           PR_TITLE="${{ inputs.commit-message-prefix }}: update nx to version ${LATEST_VERSION}"
         fi
 
-        PR_BODY="## 🚀 Nx Migration Update
+        PR_BODY="## 🚀 Nx Migrate Update
 
         **Version Update:** \`${{ steps.check-update.outputs.current-version }}\` → \`${LATEST_VERSION}\`
 

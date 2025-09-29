@@ -31,7 +31,7 @@ jobs:
           tag_name: ${{ github.ref }}
           name: v${{ steps.version.outputs.version }}
           body: |
-            ## 🚀 Nx Migration Action v${{ steps.version.outputs.version }}
+            ## 🚀 Nx Migrate Action v${{ steps.version.outputs.version }}
 
             Automatically migrate Nx workspaces to the latest version and create PRs for review and validation. Optional auto-merge workflow available for seamless CI integration.
 

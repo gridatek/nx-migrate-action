@@ -1,4 +1,4 @@
-# Nx Migration Action
+# Nx Migrate Action
 
 Automatically migrate your Nx workspace to the latest version and create PRs for review and validation. Optional auto-merge workflow available for seamless CI integration.
 
@@ -27,7 +27,7 @@ This action requires Node.js to be set up in your workflow before use. The actio
 ### Basic Usage
 
 ```yaml
-name: Nx Migration
+name: Nx Migrate
 on:
   workflow_dispatch:
   schedule:
@@ -54,7 +54,7 @@ jobs:
 ### Advanced Configuration
 
 ```yaml
-name: Nx Migration
+name: Nx Migrate
 on:
   workflow_dispatch:
   schedule:
@@ -177,7 +177,7 @@ You can add an optional workflow to automatically merge Nx migration PRs after a
 
 ```yaml
 # .github/workflows/auto-merge-nx-prs.yml
-name: Auto-merge Nx Migration PRs
+name: Auto-merge Nx Migrate PRs
 
 on:
   pull_request:
@@ -188,7 +188,7 @@ on:
 
 jobs:
   auto-merge:
-    name: Auto-merge Nx Migration PR
+    name: Auto-merge Nx Migrate PR
     runs-on: ubuntu-latest
     if: |
       github.event.pull_request.user.login == 'github-actions[bot]' &&
@@ -267,7 +267,7 @@ The action supports two modes to handle different use cases:
 #### Testing Different Configurations
 
 ```yaml
-name: Test Nx Migration
+name: Test Nx Migrate
 on: workflow_dispatch
 
 jobs:
@@ -299,7 +299,7 @@ jobs:
 #### Production Migration with Auto-merge
 
 ```yaml
-name: Nx Migration
+name: Nx Migrate
 on:
   schedule:
     - cron: '0 2 * * 1' # Weekly on Mondays
@@ -367,7 +367,7 @@ flowchart TD
     G -->|Exists| H[Exit: Skip Duplicate Work]
     G -->|Not Exists| I[Create Simple Branch]
 
-    F --> J[Run Nx Migration]
+    F --> J[Run Nx Migrate]
     I --> J
     J --> K[Execute Migrations]
     K --> L[Commit Changes]
