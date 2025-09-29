@@ -60,7 +60,7 @@ The action follows this sequence:
 - `nx-package`: Target package to migrate (default: nx)
 - `package-manager`: npm/yarn/pnpm (default: npm)
 - `node-version`: Node.js version to use (default: 22)
-- `nx-version`: Version tag for updates - latest, beta, canary, next (default: latest)
+- `nx-version`: Version tag for updates - latest, next, or specific version like 19.8.0 (default: latest)
 
 ### PR Configuration
 
