@@ -112,10 +112,11 @@ jobs:
 
 ### Dev/Testing Options
 
-| Input               | Description                                                            | Default | Required |
-| ------------------- | ---------------------------------------------------------------------- | ------- | -------- |
-| `working-directory` | Working directory                                                      | `.`     | No       |
-| `dev-mode`          | Enable dev mode for testing (creates unique branches with matrix info) | `false` | No       |
+| Input               | Description                                       | Default       | Required |
+| ------------------- | ------------------------------------------------- | ------------- | -------- |
+| `working-directory` | Working directory                                 | `.`           | No       |
+| `verbose`           | Enable verbose logging output                     | `false`       | No       |
+| `branch-strategy`   | Branch strategy: "per-version" or "per-execution" | `per-version` | No       |
 
 ## Outputs
 
@@ -189,11 +190,11 @@ jobs:
 
 You can add an optional workflow to automatically merge Nx migration PRs after all CI checks pass. See the demo repository for a complete example with branch protection: https://github.com/gridatek/nx-migrate-action-demo
 
-### Dev Mode vs Production Mode
+### Branch Strategy Options
 
-The action supports two modes to handle different use cases:
+The action supports two branch strategies to handle different use cases:
 
-#### Production Mode (Default)
+#### Per-Version Strategy (Default)
 
 ```yaml
 - uses: actions/setup-node@v4
@@ -203,7 +204,7 @@ The action supports two modes to handle different use cases:
 - uses: gridatek/nx-migrate-action@v0
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # dev-mode defaults to 'false'
+  # branch-strategy defaults to 'per-version'
 ```
 
 **Features:**
@@ -212,9 +213,9 @@ The action supports two modes to handle different use cases:
 - Checks if branch already exists and skips if found
 - Prevents duplicate migration work
 - Creates single clean PR per version
-- Ideal for real production migrations
+- Ideal for production migrations and scheduled workflows
 
-#### Dev Mode (Testing)
+#### Per-Execution Strategy (Testing/Matrix)
 
 ```yaml
 - uses: actions/setup-node@v4
@@ -225,7 +226,7 @@ The action supports two modes to handle different use cases:
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
-    dev-mode: 'true'
+    branch-strategy: 'per-execution'
 ```
 
 **Features:**
@@ -266,7 +267,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           package-manager: ${{ matrix.package-manager }}
-          dev-mode: 'true' # Creates 6 unique PRs for testing
+          branch-strategy: 'per-execution' # Creates 6 unique PRs for testing
 ```
 
 #### Production Migration with Auto-merge
@@ -480,13 +481,13 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Optional auto-merge**: Added workflow to automatically merge PRs after CI validation passes
 - **Better developer experience**: Re-runnable tests, proper CI environment, standard workflows
 
-### Dev/Prod Mode Support
+### Branch Strategy Support
 
-- **Dev Mode**: Added `dev-mode` input for testing workflows with matrix strategies
+- **Per-execution strategy**: `branch-strategy: 'per-execution'` for testing and matrix workflows
   - Creates unique branches with matrix info: `nx-migrate-21.5.3-package-manager-yarn-node-version-24-...`
   - Each matrix job creates separate PRs for comprehensive testing
   - Includes matrix variables in PR titles for easy identification
-- **Prod Mode** (default): Optimized for production use
+- **Per-version strategy** (default): `branch-strategy: 'per-version'` for production use
   - Simple branch names: `nx-migrate-21.5.3`
   - Checks if branch already exists and skips duplicate work
   - Single clean PR per version update

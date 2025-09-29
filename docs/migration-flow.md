@@ -14,9 +14,9 @@ flowchart TD
     E -->|No| F[ℹ️ Up to date]
     F --> G[✅ Complete]
 
-    E -->|Yes| H1{🎯 Dev Mode?}
-    H1 -->|Yes| H2[🔀 Create unique branch<br/>for this execution]
-    H1 -->|No| H3[🔍 Check if branch exists]
+    E -->|Yes| H1{🎯 Branch Strategy?}
+    H1 -->|per-execution| H2[🔀 Create unique branch<br/>for this execution]
+    H1 -->|per-version| H3[🔍 Check if branch exists]
     H3 -->|Exists| H4[⏭️ Skip: already handled]
     H4 --> G
     H3 -->|Not exists| H5[🔀 Create branch]
@@ -76,11 +76,11 @@ flowchart TD
 
 ### Branch Strategy Phase (if update needed)
 
-- **🎯 Dev Mode?**: Check if action is running in development mode
-- **🔀 Create unique branch with matrix info**: Dev mode creates branches like `nx-migrate-21.5.3-yarn-node24-123-1`
-- **🔍 Check if branch exists**: Prod mode checks for existing branch `nx-migrate-21.5.3`
+- **🎯 Branch Strategy?**: Check which branch strategy to use
+- **🔀 Create unique branch with matrix info**: Per-execution strategy creates branches like `nx-migrate-21.5.3-yarn-node24-123-1`
+- **🔍 Check if branch exists**: Per-version strategy checks for existing branch `nx-migrate-21.5.3`
 - **⏭️ Skip: already handled**: Exit early if branch exists to prevent duplicate work
-- **🔀 Create branch**: Prod mode creates clean branch name
+- **🔀 Create branch**: Per-version strategy creates clean branch name
 
 ### Migration Phase
 
@@ -164,29 +164,29 @@ Start → Setup → Install → Version Check → Migrate → Commit migrations.
 Start → Setup → Install → Version Check → Migrate → Migration fails ❌ → Action fails
 ```
 
-### Scenario F: Dev Mode Matrix Testing
+### Scenario F: Per-Execution Strategy Testing
 
 ```
-Start → Setup → Install → Version Check → Dev Mode → Create unique branch (matrix-info) → Migrate → Create PR
+Start → Setup → Install → Version Check → Per-Execution Strategy → Create unique branch (matrix-info) → Migrate → Create PR
 ```
 
-### Scenario G: Prod Mode Duplicate Prevention
+### Scenario G: Per-Version Strategy Duplicate Prevention
 
 ```
-Start → Setup → Install → Version Check → Prod Mode → Branch exists → Skip (no duplicate work)
+Start → Setup → Install → Version Check → Per-Version Strategy → Branch exists → Skip (no duplicate work)
 ```
 
 ## 🔧 Configuration Impact
 
-| Setting                       | Result                                                                                   |
-| ----------------------------- | ---------------------------------------------------------------------------------------- |
-| `dev-mode: true`              | Creates unique branches with matrix info for testing                                     |
-| `dev-mode: false` (default)   | Creates branches with duplicate detection                                                |
-| `nx-version: latest`          | Uses stable release version                                                              |
-| `nx-version: next`            | Uses pre-release version                                                                 |
-| `push-migrations-json: yes`   | migrations.json preserved in Git history                                                 |
-| `push-migrations-json: false` | migrations.json removed after successful migration                                       |
-| Always creates PRs            | All migrations create PRs targeting current workflow branch for repository CI validation |
+| Setting                                  | Result                                                                                   |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `branch-strategy: per-execution`         | Creates unique branches with matrix info for testing                                     |
+| `branch-strategy: per-version` (default) | Creates branches with duplicate detection                                                |
+| `nx-version: latest`                     | Uses stable release version                                                              |
+| `nx-version: next`                       | Uses pre-release version                                                                 |
+| `push-migrations-json: yes`              | migrations.json preserved in Git history                                                 |
+| `push-migrations-json: false`            | migrations.json removed after successful migration                                       |
+| Always creates PRs                       | All migrations create PRs targeting current workflow branch for repository CI validation |
 
 ## 🎨 Legend
 
