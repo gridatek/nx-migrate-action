@@ -40,6 +40,11 @@ inputs:
     required: false
     default: 'false'
 
+  strict-lockfile:
+    description: 'Enforce strict lockfile checking (npm ci, yarn/pnpm --frozen-lockfile). If false, falls back to regular install on sync errors.'
+    required: false
+    default: 'false'
+
   push-migrations-json:
     description: 'Push migrations.json to repository after successful migration'
     required: false
@@ -95,15 +100,62 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
+        STRICT_MODE="${{ inputs.strict-lockfile }}"
+
         case "${{ inputs.package-manager }}" in
           npm)
-            npm ci
+            if [[ "$STRICT_MODE" == "true" ]]; then
+              # Strict mode: only use npm ci
+              npm ci
+            else
+              # Lenient mode: try npm ci first, fallback to npm install if lockfile is out of sync
+              if ! npm ci 2>&1 | tee /tmp/npm_ci_output.txt; then
+                if grep -q "package-lock.json.*in sync" /tmp/npm_ci_output.txt; then
+                  echo "⚠️ Lock file out of sync, falling back to npm install..."
+                  npm install
+                else
+                  echo "❌ npm ci failed for a reason other than lock file sync"
+                  cat /tmp/npm_ci_output.txt
+                  exit 1
+                fi
+              fi
+            fi
             ;;
           yarn)
-            yarn install --frozen-lockfile
+            if [[ "$STRICT_MODE" == "true" ]]; then
+              # Strict mode: only use frozen lockfile
+              yarn install --frozen-lockfile
+            else
+              # Lenient mode: try frozen lockfile first, fallback to regular install if out of sync
+              if ! yarn install --frozen-lockfile 2>&1 | tee /tmp/yarn_output.txt; then
+                if grep -q "lockfile" /tmp/yarn_output.txt; then
+                  echo "⚠️ Lock file out of sync, falling back to yarn install..."
+                  yarn install
+                else
+                  echo "❌ yarn install --frozen-lockfile failed"
+                  cat /tmp/yarn_output.txt
+                  exit 1
+                fi
+              fi
+            fi
             ;;
           pnpm)
-            pnpm install --frozen-lockfile
+            if [[ "$STRICT_MODE" == "true" ]]; then
+              # Strict mode: only use frozen lockfile
+              pnpm install --frozen-lockfile
+            else
+              # Lenient mode: try frozen lockfile first, fallback to regular install if out of sync
+              if ! pnpm install --frozen-lockfile 2>&1 | tee /tmp/pnpm_output.txt; then
+                if grep -q "lockfile" /tmp/pnpm_output.txt; then
+                  echo "⚠️ Lock file out of sync, falling back to pnpm install..."
+                  pnpm install --no-frozen-lockfile
+                else
+                  echo "❌ pnpm install --frozen-lockfile failed"
+                  cat /tmp/pnpm_output.txt
+                  exit 1
+                fi
+              fi
+            fi
             ;;
           *)
             echo "Unsupported package manager: ${{ inputs.package-manager }}"

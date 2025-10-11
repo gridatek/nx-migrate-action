@@ -104,11 +104,12 @@ jobs:
 
 ### Advanced Options
 
-| Input                   | Description                                                                         | Default | Required |
-| ----------------------- | ----------------------------------------------------------------------------------- | ------- | -------- |
-| `skip-initial-install`  | Skip initial dependency installation (useful if dependencies are already installed) | `false` | No       |
-| `push-migrations-json`  | Push migrations.json to repository after successful migration                       | `false` | No       |
-| `create-missing-labels` | Create missing labels in the repository                                             | `true`  | No       |
+| Input                   | Description                                                                                                                     | Default | Required |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------- | -------- |
+| `skip-initial-install`  | Skip initial dependency installation (useful if dependencies are already installed)                                             | `false` | No       |
+| `strict-lockfile`       | Enforce strict lockfile checking (npm ci, yarn/pnpm --frozen-lockfile). If false, falls back to regular install on sync errors. | `false` | No       |
+| `push-migrations-json`  | Push migrations.json to repository after successful migration                                                                   | `false` | No       |
+| `create-missing-labels` | Create missing labels in the repository                                                                                         | `true`  | No       |
 
 ### Dev/Testing Options
 
@@ -185,6 +186,54 @@ jobs:
   with:
     pr-labels: 'dependencies,nx-migration,high-priority'
 ```
+
+### Lockfile Handling
+
+The action supports flexible lockfile handling with the `strict-lockfile` option.
+
+#### Lenient Mode (Default - Recommended)
+
+Automatically recovers from lockfile sync errors by falling back to regular install:
+
+```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'npm'
+- uses: gridatek/nx-migrate-action@v0
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # strict-lockfile: false is the default
+  # Uses npm ci but falls back to npm install if lockfile is out of sync
+```
+
+#### Strict Mode
+
+Enforces strict lockfile checking and fails if files are out of sync:
+
+```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'npm'
+- uses: gridatek/nx-migrate-action@v0
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    strict-lockfile: true # Fails if lockfiles are not in sync
+```
+
+**When to use strict mode:**
+
+- Production CI/CD where lockfiles must always be in sync
+- Enforcing team standards for lockfile maintenance
+- Catching lockfile sync issues early
+
+**When to use lenient mode (default):**
+
+- Development environments with occasional sync issues
+- Automated migrations where you want the action to handle sync errors
+- Repos where Nx migrations frequently update lockfiles
 
 ### Optional Auto-merge After CI Validation
 
@@ -330,7 +379,12 @@ steps:
 
 ```mermaid
 flowchart TD
-    A[Start Action] --> B[Check for Nx Updates]
+    A[Start Action] --> A1[Install Dependencies]
+    A1 --> A2{Strict Lockfile?}
+    A2 -->|Yes| A3[npm ci / frozen lockfile]
+    A2 -->|No| A4[Try npm ci, fallback to npm install]
+    A3 --> B[Check for Nx Updates]
+    A4 --> B
     B --> C{Update Available?}
     C -->|No| D[Exit: Already up to date]
     C -->|Yes| E{Branch Strategy?}
@@ -348,6 +402,9 @@ flowchart TD
     L --> P[Create Pull Request]
     P --> S[End: PR Created for Review]
 
+    style A2 fill:#fff3e0
+    style A3 fill:#ffccbc
+    style A4 fill:#c8e6c9
     style E fill:#e1f5fe
     style F fill:#f3e5f5
     style G fill:#e8f5e8
@@ -356,14 +413,17 @@ flowchart TD
 
 ### Workflow Steps
 
-1. **Version Detection**: Compares current Nx version with target version using package manager commands
-2. **Mode Selection**:
+1. **Dependency Installation**:
+   - **Strict mode**: Uses `npm ci` or frozen lockfile exclusively
+   - **Lenient mode** (default): Tries strict install first, automatically falls back to regular install on sync errors
+2. **Version Detection**: Compares current Nx version with target version using package manager commands
+3. **Mode Selection**:
    - **Per-execution strategy**: Creates unique branches with matrix information for testing
    - **Per-version strategy**: Uses simple branch names and checks for existing branches
-3. **Migration Process**: Runs `nx migrate` with specified version if update is available
-4. **Code Migrations**: Executes any migrations found in `migrations.json`
-5. **PR Creation**: Always creates a pull request targeting the current workflow branch for review and validation by repository CI/CD
-6. **Validation**: Repository's existing CI/CD workflows handle testing, building, and validation
+4. **Migration Process**: Runs `nx migrate` with specified version if update is available
+5. **Code Migrations**: Executes any migrations found in `migrations.json`
+6. **PR Creation**: Always creates a pull request targeting the current workflow branch for review and validation by repository CI/CD
+7. **Validation**: Repository's existing CI/CD workflows handle testing, building, and validation
 
 ## Workflow Strategies
 
@@ -438,6 +498,13 @@ permissions:
 
 - Verify your package manager is correctly specified and available
 
+**"npm ci can only install packages when your package.json and package-lock.json are in sync"**
+
+- This error occurs when lockfiles are out of sync
+- The action now automatically handles this by falling back to `npm install` (default behavior)
+- If you want to enforce strict lockfile checking, use `strict-lockfile: true`
+- To fix manually: run `npm install` locally and commit the updated `package-lock.json`
+
 **"Auto-merge not working"**
 
 - Ensure you've added the optional auto-merge workflow (`.github/workflows/auto-merge-nx-prs.yml`)
@@ -472,6 +539,13 @@ Enable verbose logging:
 MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Recent Updates
+
+### Lockfile Handling Improvements
+
+- **Automatic fallback**: Action now automatically handles lockfile sync errors by falling back to regular install
+- **New `strict-lockfile` option**: Choose between lenient mode (default, with auto-recovery) or strict mode (enforce sync)
+- **Better error messages**: Clear guidance when lockfile issues occur
+- **Flexible configuration**: Works well in both CI environments and development setups
 
 ### Simplified Validation Strategy
 

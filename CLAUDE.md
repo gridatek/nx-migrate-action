@@ -38,7 +38,7 @@ nx-migrate-action is a GitHub Action that automatically migrates Nx workspaces t
 
 The action follows this sequence:
 
-1. **Setup**: Node.js setup and dependency installation
+1. **Setup**: Node.js setup and dependency installation with configurable lockfile handling (strict mode or lenient mode with automatic fallback)
 2. **Version Check**: Compare current vs latest Nx package version
 3. **Migration**: Run `nx migrate latest` and reinstall dependencies
 4. **Migrations Execution**: Run any generated migrations from migrations.json
@@ -48,6 +48,7 @@ The action follows this sequence:
 ### Key Features
 
 - **Multi-package manager support**: npm, yarn, pnpm with different command patterns
+- **Flexible lockfile handling**: Configurable strict or lenient mode with automatic fallback for sync errors
 - **Always creates PRs**: All migrations create PRs for proper review and CI validation
 - **Optional auto-merge**: Separate workflow can auto-merge PRs after CI validation passes
 - **Clean migration process**: Handles dependency updates and migration execution
@@ -69,6 +70,7 @@ The action follows this sequence:
 ### Advanced Options
 
 - `skip-initial-install`: Skip initial dependency installation (default: false)
+- `strict-lockfile`: Enforce strict lockfile checking (npm ci, yarn/pnpm --frozen-lockfile). If false, falls back to regular install on sync errors (default: false)
 - `push-migrations-json`: Keep migrations.json for audit trail (default: false)
 - `create-missing-labels`: Auto-create PR labels if missing (default: true)
 
@@ -140,6 +142,7 @@ The action always creates detailed PRs with:
 
 ### Error Handling
 
+- **Lockfile sync errors**: Automatic fallback to regular install when lockfiles are out of sync (configurable via strict-lockfile option)
 - **Migration validation**: Graceful handling of missing migrations.json files
 - **PR creation fallbacks**: Multiple fallback mechanisms for PR creation failures (retry without labels, check for existing PRs)
 - **Version detection**: Validation of version strings and fallback to current version if invalid
@@ -160,5 +163,6 @@ The action always creates detailed PRs with:
 
 - **branch-strategy**: Controls branch naming - "per-version" for production, "per-execution" for testing
 - **skip-initial-install**: Useful when dependencies are pre-installed in testing scenarios
+- **strict-lockfile**: Controls lockfile handling - false (default) allows automatic fallback to regular install on sync errors, true enforces strict checking
 - **push-migrations-json**: Controls whether to keep migration files for audit trail
 - **create-missing-labels**: Automatic label creation with predefined colors and descriptions
